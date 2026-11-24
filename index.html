@@ -124,6 +124,8 @@
   .item:first-of-type { border-top: none; }
   .said { color: var(--muted); text-decoration: line-through; }
   .fixed { font-weight: 600; }
+  .say { display: inline-block; margin: 4px 6px 2px 0; padding: 5px 12px; font-size: 13px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: inherit; cursor: pointer; }
+  .say:active { opacity: .6; }
   .why { color: var(--muted); font-size: 14px; }
   .empty { color: var(--muted); font-size: 14px; }
   .timing { font-size: 14px; color: var(--muted); }
@@ -233,7 +235,7 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.1.2 (2026-11-24)';
+const APP_VERSION = '0.1.3 (2026-11-24)';
 const TURNS = 3;                         // 학습자가 답하는 횟수
 const API_BASE = 'https://generativelanguage.googleapis.com';
 const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
@@ -1253,7 +1255,7 @@ async function analyze(pcm, transcript) {
     convo,
     '',
     'Return JSON with:',
-    '- "grammar": at most 4 items, using the learner\'s real sentences. "said" = what the learner said, "corrected" = a natural corrected sentence, "reason_ko" = one short reason in Korean. Return an empty list if there are no errors.',
+    '- "grammar": at most 4 items, using the learner\'s real sentences. Include ONLY sentences that have a real grammar or word-choice error; never list a sentence that is already correct, and do not treat contractions as errors. "said" = what the learner said, "corrected" = a natural corrected sentence, "reason_ko" = one short reason in Korean. Return an empty list if there are no errors.',
     '- "pronunciation": at most 5 items. Report ONLY words you clearly heard mispronounced in THIS audio. Do NOT flag words that sounded fine. Do NOT guess based on mistakes Korean learners commonly make. If you are not sure, leave it out. An empty list is fine. "word" = the English word, "heard_as_ko" = how it actually sounded (in Korean, you may quote the sound), "fix_ko" = how to fix it with mouth or tongue tips (in Korean).',
     '- "good_point_ko": one sentence in Korean about something specific the learner did well.',
     'Korean writing rules: short sentences, polite style, no emoji, no em dash, no middle dot.'
@@ -1325,6 +1327,27 @@ async function idbGet(k) {
 /* ===================== 결과 화면 ===================== */
 let lastResult = null;
 let lastAnalysisInput = null;
+function sayButtons(text) {
+  if (!window.speechSynthesis || !text) return '';
+  const t = esc(text);
+  return '<div><button type="button" class="say" data-say="' + t + '" data-rate="0.95">듣기</button><button type="button" class="say" data-say="' + t + '" data-rate="0.6">천천히 듣기</button></div>';
+}
+function sayText(text, rate) {
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = rate || 0.95;
+    const v = pickVoice();
+    if (v) u.voice = v;
+    u.onerror = (e) => log('듣기 실패: ' + (e.error || ''), 'WARN');
+    speechSynthesis.speak(u);
+  } catch (e) { log('듣기 실패: ' + e.message, 'WARN'); }
+}
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest && ev.target.closest('.say');
+  if (b) sayText(b.getAttribute('data-say'), parseFloat(b.getAttribute('data-rate')));
+});
 async function reAnalyze() {
   const inp = lastAnalysisInput;
   if (!inp) return;
@@ -1361,9 +1384,9 @@ function showResult(result, fromStorage) {
     const g = (Array.isArray(a.grammar) ? a.grammar : []).slice(0, 4);
     const p = (Array.isArray(a.pronunciation) ? a.pronunciation : []).slice(0, 5);
     h += '<h3>문법</h3>';
-    h += g.length ? g.map(x => '<div class="item"><div class="said">' + esc(x.said) + '</div><div class="fixed">' + esc(x.corrected) + '</div><div class="why">' + esc(x.reason_ko) + '</div></div>').join('') : '<p class="empty">고칠 문법이 없습니다.</p>';
+    h += g.length ? g.map(x => '<div class="item"><div class="said">' + esc(x.said) + '</div><div class="fixed">' + esc(x.corrected) + '</div>' + sayButtons(x.corrected) + '<div class="why">' + esc(x.reason_ko) + '</div></div>').join('') : '<p class="empty">고칠 문법이 없습니다.</p>';
     h += '<h3>발음</h3>';
-    h += p.length ? p.map(x => '<div class="item"><div class="fixed">' + esc(x.word) + '</div><div class="why">들린 소리: ' + esc(x.heard_as_ko) + '</div><div>' + esc(x.fix_ko) + '</div></div>').join('') : '<p class="empty">확실히 틀린 발음은 없었습니다.</p>';
+    h += p.length ? p.map(x => '<div class="item"><div class="fixed">' + esc(x.word) + '</div>' + sayButtons(x.word) + '<div class="why">들린 소리: ' + esc(x.heard_as_ko) + '</div><div>' + esc(x.fix_ko) + '</div></div>').join('') : '<p class="empty">확실히 틀린 발음은 없었습니다.</p>';
     h += '<h3>잘한 점</h3><p>' + esc(a.good_point_ko || '') + '</p>';
   }
   h += '<h3>걸린 시간</h3><div class="timing">' + timingLines(result).map(esc).join('<br>') + '</div>';
