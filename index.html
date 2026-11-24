@@ -141,12 +141,142 @@
   }
   .err { color: var(--danger); font-size: 14px; margin-top: 8px; }
   audio { width: 100%; margin-top: 8px; }
+  /* 0.2.0 학습 흐름 */
+  button { min-height: 44px; }
+  .say { min-height: 36px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .top h1 { font-size: 19px; margin: 0; }
+  .nav { display: flex; gap: 6px; }
+  .nav button { padding: 6px 12px; font-size: 15px; }
+  .nav button.on { background: var(--accent-weak); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .wide { width: 100%; }
+  .lbl { display: block; font-weight: 600; margin: 14px 0 6px; }
+  input[type=text] { width: 100%; }
+  textarea { width: 100%; font-size: 16px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); margin: 8px 0; font-family: inherit; }
+  .hello { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .streak { font-size: 15px; }
+  .streak b { font-size: 22px; color: var(--accent); }
+  .week { display: flex; gap: 6px; margin-top: 10px; }
+  .week div { flex: 1; text-align: center; font-size: 12px; color: var(--muted); }
+  .week i { display: block; height: 26px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); margin-bottom: 4px; }
+  .week .on i { background: var(--ok); border-color: var(--ok); }
+  .week .today { color: var(--text); font-weight: 700; }
+  .steps { list-style: none; padding: 0; margin: 0 0 12px; }
+  .steps li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
+  .steps li:first-child { border-top: none; }
+  .steps .num { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .steps li.next .num { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .steps li.done .num { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .steps b { display: block; }
+  .steps span { color: var(--muted); font-size: 14px; }
+  .ttl { font-size: 20px; margin: 2px 0 4px; }
+  .goal { font-size: 15px; margin: 0 0 10px; }
+  .frame { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; overflow-wrap: anywhere; }
+  .frame .en { font-size: 19px; font-weight: 700; }
+  .frame .ko { color: var(--muted); font-size: 14px; }
+  .frame .ex { margin-top: 6px; font-size: 15px; }
+  .frame .exko { color: var(--muted); font-size: 13px; }
+  .tip { background: var(--accent-weak); border-radius: 10px; padding: 10px 12px; font-size: 15px; margin: 12px 0 0; }
+  details.frames { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; margin-bottom: 10px; font-size: 14px; }
+  details.frames summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; }
+  details.frames .frame { padding: 8px; margin: 6px 0; }
+  details.frames .frame .en { font-size: 16px; }
+  .ko-big { font-size: 21px; font-weight: 700; margin: 12px 0 16px; overflow-wrap: anywhere; }
+  .en-big { font-size: 21px; font-weight: 700; color: var(--accent); margin: 12px 0 4px; overflow-wrap: anywhere; }
+  .rko { color: var(--muted); font-size: 15px; margin-top: 8px; }
+  .big2 { padding: 14px; font-size: 17px; font-weight: 600; }
+  .hist { border-top: 1px solid var(--line); padding: 8px 0; font-size: 14px; }
+  .hist:first-child { border-top: none; }
+  .hist b { font-size: 15px; }
+  .filebtn { display: block; text-align: center; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: pointer; min-height: 44px; }
+  .filebtn input { display: none; }
+  .sumrow { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding: 8px 0; }
+  .sumrow:first-child { border-top: none; }
 </style>
 </head>
 <body>
 <main>
-  <h1>영어 말하기 연습</h1>
-  <p class="sub">시험판. AI와 영어로 짧게 대화하고 피드백을 받습니다.</p>
+  <header class="top">
+    <h1>영어 말하기 연습</h1>
+    <nav id="nav" class="nav hidden">
+      <button type="button" data-go="home">홈</button>
+      <button type="button" data-go="history">기록</button>
+      <button type="button" data-go="settings">설정</button>
+    </nav>
+  </header>
+
+  <!-- 0. 처음 한 번: 프로필 -->
+  <section class="screen hidden" id="scrProfile">
+    <div class="card">
+      <h2>처음 오셨네요</h2>
+      <p class="note" style="margin-top:0">이름과 수준을 골라 주세요. 나중에 설정에서 바꿀 수 있어요.</p>
+      <label class="lbl" for="pfName">이름 (안 써도 돼요)</label>
+      <input id="pfName" type="text" maxlength="20" autocomplete="off" placeholder="예: 민수">
+      <div class="lbl">내 영어 수준</div>
+      <div id="pfLevels"></div>
+      <button id="pfSaveBtn" type="button" class="primary start">시작하기</button>
+    </div>
+  </section>
+
+  <!-- 홈 -->
+  <section class="screen hidden" id="scrHome">
+    <div class="card">
+      <div id="homeHello" class="hello"></div>
+      <div class="streak"><b id="streakN">0</b>일 연속 <span class="note" id="weekN"></span></div>
+      <div class="week" id="weekRow"></div>
+    </div>
+    <div class="card hidden" id="noKeyCard">
+      <p style="margin:0 0 8px">API 키가 아직 없어요. 설정에서 넣어 주세요.</p>
+      <button type="button" data-go="settings" class="wide">설정으로 가기</button>
+    </div>
+    <div class="card hidden" id="pendingCard">
+      <p style="margin:0 0 8px">지난 대화가 아직 분석되지 않았어요.</p>
+      <button type="button" id="pendingBtn" class="wide">지난 결과 열기</button>
+    </div>
+    <div class="card">
+      <h2>오늘 할 것</h2>
+      <ol class="steps" id="homeSteps"></ol>
+      <button id="goBtn" type="button" class="primary start">오늘 연습 시작</button>
+    </div>
+    <div class="card">
+      <h2>지금 주제</h2>
+      <div id="homeTopic"></div>
+      <div class="btnrow">
+        <button id="prevTopicBtn" type="button">이전 주제 다시</button>
+        <button id="nextTopicBtn" type="button">다음 주제로 넘기기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 준비 -->
+  <section class="screen hidden" id="scrPrep">
+    <div class="card">
+      <div class="note" style="margin:0">준비 (1분)</div>
+      <h2 id="prepTitle" class="ttl"></h2>
+      <p id="prepGoal" class="goal"></p>
+      <p class="note" style="margin:0 0 8px">문장 틀을 듣고 소리 내어 한 번씩 따라 말해 보세요.</p>
+      <div id="prepFrames"></div>
+      <p class="tip">막히면 한국어로 말하세요. AI가 영어 문장을 알려 줍니다.</p>
+      <p class="note" id="prepMode"></p>
+      <div id="prepNoKey" class="hidden">
+        <p class="err">API 키가 없어요. 먼저 설정에서 넣어 주세요.</p>
+        <button type="button" data-go="settings" class="wide">설정으로 가기</button>
+      </div>
+      <button id="startBtn" type="button" class="primary start" style="margin-top:12px">대화 시작</button>
+      <div id="startErr" class="err hidden"></div>
+    </div>
+  </section>
+
+  <!-- 설정 -->
+  <div class="screen hidden" id="scrSettings">
+  <section class="card">
+    <h2>내 정보</h2>
+    <label class="lbl" for="setName">이름</label>
+    <input id="setName" type="text" maxlength="20" autocomplete="off">
+    <div class="lbl">수준</div>
+    <div id="setLevels"></div>
+    <button id="setSaveBtn" type="button" class="primary wide">저장</button>
+  </section>
 
   <!-- 1. 키 설정 -->
   <section class="card" id="keyCard">
@@ -194,12 +324,16 @@
       <option value="8">보통: 8번 대답 (약 3분)</option>
       <option value="20">길게: 20번 대답 (약 8분)</option>
     </select>
-    <button id="startBtn" type="button" class="primary start">대화 시작</button>
-    <div id="startErr" class="err hidden"></div>
+    <p class="note">대화는 홈의 "오늘 연습 시작"에서 시작해요.</p>
   </section>
+  </div>
 
   <!-- 3. 대화 화면 -->
   <section class="card hidden" id="talkCard">
+    <details class="frames" id="talkFrames">
+      <summary>오늘 문장 틀 보기</summary>
+      <div id="talkFramesBody"></div>
+    </details>
     <div class="status" id="status">준비 중</div>
     <div class="turns" id="turnInfo"></div>
     <div class="chat" id="chat"></div>
@@ -215,7 +349,68 @@
     <div id="resultBody" class="res"></div>
     <div class="btnrow">
       <button id="copyResultBtn" type="button">결과 복사</button>
-      <button id="newBtn" type="button" class="primary">새 대화</button>
+      <button id="newBtn" type="button">홈으로</button>
+    </div>
+  </section>
+
+  <!-- 오늘 연습 끝 -->
+  <section class="screen hidden" id="scrDone">
+    <div class="card">
+      <h2 class="ttl">오늘 연습 끝</h2>
+      <div id="doneBody"></div>
+      <button type="button" data-go="home" class="primary start">홈으로</button>
+    </div>
+  </section>
+
+  <!-- 복습 -->
+  <section class="screen hidden" id="scrReview">
+    <div class="card">
+      <div class="note" style="margin:0" id="rvCount"></div>
+      <div id="rvCardBox">
+        <p class="note">이 뜻을 영어로 소리 내어 말해 보세요.</p>
+        <div class="ko-big" id="rvFront"></div>
+        <button id="rvShowBtn" type="button" class="primary start">정답 보기</button>
+        <div id="rvBack" class="hidden">
+          <div class="en-big" id="rvEn"></div>
+          <div id="rvSay"></div>
+          <div id="rvMore" class="why"></div>
+          <div class="btnrow">
+            <button id="rvBadBtn" type="button" class="big2">못 했어요</button>
+            <button id="rvGoodBtn" type="button" class="primary big2">말했어요</button>
+          </div>
+        </div>
+      </div>
+      <div id="rvEnd" class="hidden"></div>
+    </div>
+  </section>
+
+  <!-- 기록 -->
+  <section class="screen hidden" id="scrHistory">
+    <div class="card">
+      <h2>기록</h2>
+      <div id="histSummary"></div>
+      <button type="button" id="lastResultBtn" class="wide hidden" style="margin-top:10px">지난 결과 보기</button>
+    </div>
+    <div class="card">
+      <h2>자주 지적된 발음</h2>
+      <div id="histSounds"></div>
+    </div>
+    <div class="card">
+      <h2>날짜별 연습</h2>
+      <div id="histList"></div>
+    </div>
+    <div class="card">
+      <h2>기록 옮기기</h2>
+      <p class="note" style="margin-top:0">기록은 이 기기에만 있어요. 폰을 바꿀 때 내보내고 가져오세요.</p>
+      <div class="btnrow">
+        <button type="button" id="exportFileBtn">파일로 저장</button>
+        <button type="button" id="exportCopyBtn">복사하기</button>
+      </div>
+      <div class="lbl">기록 가져오기</div>
+      <label class="filebtn">파일 고르기<input type="file" id="importFile" accept=".json,application/json,text/plain"></label>
+      <textarea id="importText" rows="3" placeholder="복사한 기록을 여기에 붙여 넣기"></textarea>
+      <button type="button" id="importTextBtn" class="wide">붙여 넣은 기록 가져오기</button>
+      <div id="importMsg" class="note"></div>
     </div>
   </section>
 
@@ -241,7 +436,7 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.1.6 (2026-11-24)';
+const APP_VERSION = '0.2.0 (2026-11-24)';
 let TURNS = 3;                           // 학습자가 답하는 횟수 (화면에서 고름)
 const API_BASE = 'https://generativelanguage.googleapis.com';
 const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
@@ -258,25 +453,171 @@ const SPEECH_RMS = 0.02;                 // 기기 쪽 말소리 판정 기준
 const VAD_SILENCE_MS = 1500;             // 초급자는 말 사이가 길어서 넉넉히
 const SETUP_TIMEOUT_MS = 12000;
 const OPENER_TIMEOUT_MS = 8000;
-const MAX_SESSION_MS = 6 * 60 * 1000;
+const MAX_SESSION_MS = 9 * 60 * 1000 + 30000;
 const LS_KEY = 'ec_gemini_key';
 const LS_RESULT = 'ec_last_result';
 
-const tutorPrompt = () => [
-  'You are a friendly English conversation tutor.',
-  'The learner is Korean, CEFR level A2 (beginner).',
-  'RESPOND IN ENGLISH. YOU MUST RESPOND UNMISTAKABLY IN ENGLISH, even if the learner speaks Korean.',
-  'RESCUE RULE: when the learner says something in Korean, or gets stuck and mixes Korean words in, they need help. Then do exactly this: say "You can say:" and give the natural English sentence for what they meant, slowly, in simple words (10 words or fewer). Then say "Try it." and wait. After they repeat it, say "Good!" and continue with the next question. A rescue does not count as one of the answers.',
-  'Speak slowly and clearly, with simple words.',
-  'Ask only ONE short question at a time (12 words or fewer).',
-  'Do NOT correct the learner\'s mistakes during the conversation.',
-  'Keep every reply under 20 words. You are only a conversation partner: never give advice, warnings, or disclaimers.',
-  'If you could not understand the learner, say so in a few words and ask them to say it again.',
-  'First react briefly to what the learner said (a few words), then ask one follow-up question.',
-  'Topics: everyday life such as their day today, family, work, weekend.',
-  'Start by greeting the learner in one short sentence and asking your first question.',
-  'Count the learner\'s answers. After the learner\'s answer number ' + TURNS + ', say ONE short goodbye sentence and do not ask any more questions.'
-].join('\n');
+/* ===================== 학습 내용: 수준과 주제 ===================== */
+const LEVELS = [
+  { code: 'A1', ko: '왕초보', desc: '아주 쉬운 말로 천천히' },
+  { code: 'A2', ko: '초급', desc: '짧은 문장으로 일상 대화' },
+  { code: 'B1', ko: '중급', desc: '이유와 생각까지 말하기' }
+];
+const LEVEL_RULES = {
+  A1: {
+    who: 'CEFR level A1 (true beginner)',
+    speed: 'Speak VERY slowly and clearly, with very easy words. Pause a little between sentences.',
+    ask: 'Ask only ONE very short question at a time (8 words or fewer). Often use yes/no questions or either/or questions, for example "Do you like coffee or tea?"',
+    qWords: 8
+  },
+  A2: {
+    who: 'CEFR level A2 (beginner)',
+    speed: 'Speak slowly and clearly, with simple words.',
+    ask: 'Ask only ONE short question at a time (12 words or fewer).',
+    qWords: 12
+  },
+  B1: {
+    who: 'CEFR level B1 (intermediate)',
+    speed: 'Speak at a normal, natural speed, with everyday words.',
+    ask: 'Ask only ONE question at a time (15 words or fewer). Often ask for reasons and opinions, for example "Why?" or "What do you think about it?"',
+    qWords: 15
+  }
+};
+// 순서: 현재형 -> 과거형 -> 미래/계획 -> 이유 말하기
+// 틀이 겨냥한 약점: 과거형, 주어 동사 일치(-s), 조각 문장, 문장 잇기(because, so, but)
+const TOPICS = [
+  { ko: '자기소개와 가족', en: 'you and your family', goal: '나와 가족을 완전한 문장으로 소개하기', goalEn: 'introduce yourself and your family in full sentences (present simple, he/she + verb-s)',
+    frames: [
+      { en: 'I live in ___ with ___.', ko: '나는 ___에서 ___와 함께 살아요', ex: 'I live in Seoul with my wife.', exKo: '나는 서울에서 아내와 함께 살아요.' },
+      { en: 'My ___ works at ___.', ko: '내 ___는 ___에서 일해요', ex: 'My brother works at a bank.', exKo: '내 남동생은 은행에서 일해요.' },
+      { en: 'There are ___ people in my family.', ko: '우리 가족은 ___명이에요', ex: 'There are four people in my family.', exKo: '우리 가족은 네 명이에요.' }
+    ],
+    q: ['What is your name?', 'Where do you live?', 'Who do you live with?', 'How many people are in your family?', 'Tell me about one person in your family.', 'What does he or she do on weekends?'] },
+  { ko: '오늘 하루', en: 'your daily routine', goal: '하루 일과를 현재형으로 순서대로 말하기', goalEn: 'describe a normal day in order (present simple)',
+    frames: [
+      { en: 'I usually get up at ___.', ko: '나는 보통 ___시에 일어나요', ex: 'I usually get up at seven.', exKo: '나는 보통 7시에 일어나요.' },
+      { en: 'After ___, I ___.', ko: '___ 후에 나는 ___해요', ex: 'After breakfast, I go to work.', exKo: '아침을 먹은 후에 나는 출근해요.' },
+      { en: 'In the evening, I ___ and ___.', ko: '저녁에 나는 ___하고 ___해요', ex: 'In the evening, I cook dinner and watch TV.', exKo: '저녁에 나는 저녁을 만들고 TV를 봐요.' }
+    ],
+    q: ['What time do you usually get up?', 'What do you do in the morning?', 'How do you go to work?', 'What do you do after lunch?', 'What do you do in the evening?', 'What time do you go to bed?'] },
+  { ko: '내 일(직장)', en: 'your work', goal: '내가 하는 일을 설명하고 but으로 이어 말하기', goalEn: 'explain your job and connect ideas with "but" (present simple)',
+    frames: [
+      { en: 'I work at ___ as a ___.', ko: '나는 ___에서 ___로 일해요', ex: 'I work at a small company as a designer.', exKo: '나는 작은 회사에서 디자이너로 일해요.' },
+      { en: 'Every day, I ___.', ko: '나는 매일 ___해요', ex: 'Every day, I answer a lot of emails.', exKo: '나는 매일 이메일에 많이 답장해요.' },
+      { en: 'My job is ___, but ___.', ko: '내 일은 ___하지만 ___해요', ex: 'My job is busy, but it is interesting.', exKo: '내 일은 바쁘지만 재미있어요.' }
+    ],
+    q: ['What do you do for work?', 'Where do you work?', 'What time do you start work?', 'What do you do every day at work?', 'Is your job busy or easy?', 'What do you like about your job?'] },
+  { ko: '집과 동네', en: 'your home and neighborhood', goal: '우리 집과 동네를 there is, has로 설명하기', goalEn: 'describe your home and neighborhood with "there is / there are" and "has"',
+    frames: [
+      { en: 'There is a ___ near my home.', ko: '우리 집 근처에 ___가 있어요', ex: 'There is a big park near my home.', exKo: '우리 집 근처에 큰 공원이 있어요.' },
+      { en: 'My home has ___.', ko: '우리 집에는 ___가 있어요', ex: 'My home has three rooms.', exKo: '우리 집에는 방이 세 개 있어요.' },
+      { en: 'I like my neighborhood because it is ___.', ko: '우리 동네는 ___해서 좋아요', ex: 'I like my neighborhood because it is quiet.', exKo: '우리 동네는 조용해서 좋아요.' }
+    ],
+    q: ['Do you live in a house or an apartment?', 'How many rooms does your home have?', 'What is your favorite room?', 'What is near your home?', 'Is your neighborhood quiet or busy?', 'What do you like about your neighborhood?'] },
+  { ko: '음식과 식사', en: 'food and meals', goal: '좋아하는 음식과 싫어하는 이유 말하기', goalEn: 'talk about what you eat, what you like, and what you do not like and why',
+    frames: [
+      { en: 'For ___, I usually eat ___.', ko: '___으로 나는 보통 ___를 먹어요', ex: 'For lunch, I usually eat kimbap.', exKo: '점심으로 나는 보통 김밥을 먹어요.' },
+      { en: 'My favorite food is ___.', ko: '내가 제일 좋아하는 음식은 ___예요', ex: 'My favorite food is kimchi stew.', exKo: '내가 제일 좋아하는 음식은 김치찌개예요.' },
+      { en: "I don't like ___ because it is too ___.", ko: '___는 너무 ___해서 안 좋아해요', ex: "I don't like coffee because it is too bitter.", exKo: '커피는 너무 써서 안 좋아해요.' }
+    ],
+    q: ['What do you usually eat for breakfast?', 'What is your favorite food?', 'Do you cook at home?', 'Who usually cooks dinner in your home?', 'Is there any food you do not like?', 'What did you eat for lunch today?'] },
+  { ko: '어제 한 일', en: 'what you did yesterday', goal: '어제 한 일을 과거형으로 말하기', goalEn: 'talk about yesterday using the past simple (went, had, was)',
+    frames: [
+      { en: 'I went to ___.', ko: '나는 ___에 갔어요', ex: 'I went to a skin clinic.', exKo: '나는 피부과에 갔어요.' },
+      { en: 'After that, I ___.', ko: '그 다음에 나는 ___했어요', ex: 'After that, I had lunch with my friend.', exKo: '그 다음에 나는 친구와 점심을 먹었어요.' },
+      { en: 'I was ___, so I ___.', ko: '나는 ___해서 ___했어요', ex: 'I was tired, so I went to bed early.', exKo: '나는 피곤해서 일찍 잤어요.' }
+    ],
+    q: ['What did you do yesterday?', 'Where did you go?', 'Who did you meet?', 'What did you eat?', 'How did you feel?', 'What time did you go to bed?'] },
+  { ko: '쇼핑', en: 'shopping', goal: '최근에 산 물건을 과거형으로 말하기', goalEn: 'talk about something you bought, using the past simple and "because"',
+    frames: [
+      { en: 'I bought ___ at ___.', ko: '나는 ___를 ___에서 샀어요', ex: 'I bought a jacket at the mall.', exKo: '나는 쇼핑몰에서 재킷을 샀어요.' },
+      { en: 'It cost ___ won.', ko: '___원이었어요', ex: 'It cost fifty thousand won.', exKo: '5만 원이었어요.' },
+      { en: 'I bought it because ___.', ko: '___해서 그걸 샀어요', ex: 'I bought it because it was on sale.', exKo: '세일 중이어서 그걸 샀어요.' }
+    ],
+    q: ['Where do you usually go shopping?', 'Do you like shopping online?', 'What did you buy last?', 'Where did you buy it?', 'How much was it?', 'Why did you buy it?'] },
+  { ko: '건강과 병원', en: 'health and going to the doctor', goal: '아팠던 일과 병원에 간 일을 과거형으로 말하기', goalEn: 'talk about being sick and seeing a doctor (past simple + because)',
+    frames: [
+      { en: 'I had a ___.', ko: '나는 ___가 있었어요 (아팠어요)', ex: 'I had a headache last night.', exKo: '어젯밤에 머리가 아팠어요.' },
+      { en: 'I went to the ___ because ___.', ko: '___해서 ___에 갔어요', ex: 'I went to the hospital because my back hurt.', exKo: '허리가 아파서 병원에 갔어요.' },
+      { en: 'To stay healthy, I ___.', ko: '건강을 위해 나는 ___해요', ex: 'To stay healthy, I walk every day.', exKo: '건강을 위해 나는 매일 걸어요.' }
+    ],
+    q: ['How are you feeling today?', 'When were you sick last time?', 'What was wrong?', 'Did you go to the hospital?', 'What did the doctor say?', 'What do you do to stay healthy?'] },
+  { ko: '주말 계획', en: 'your weekend plans', goal: '주말 계획을 be going to로 말하기', goalEn: 'talk about plans using "be going to" and "will"',
+    frames: [
+      { en: "This weekend, I'm going to ___.", ko: '이번 주말에 나는 ___할 거예요', ex: "This weekend, I'm going to visit my parents.", exKo: '이번 주말에 나는 부모님 댁에 갈 거예요.' },
+      { en: "After that, we're going to ___.", ko: '그 다음에 우리는 ___할 거예요', ex: "After that, we're going to watch a movie.", exKo: '그 다음에 우리는 영화를 볼 거예요.' },
+      { en: 'If it rains, I will ___.', ko: '비가 오면 나는 ___할 거예요', ex: 'If it rains, I will stay home.', exKo: '비가 오면 나는 집에 있을 거예요.' }
+    ],
+    q: ['What are you going to do this weekend?', 'Who are you going to meet?', 'Where are you going to go?', 'What are you going to eat?', 'What will you do if it rains?', 'What did you do last weekend?'] },
+  { ko: '날씨와 계절', en: 'the weather and seasons', goal: '날씨를 말하고 so로 할 일을 이어 말하기', goalEn: 'describe the weather and connect it to plans with "so" and "because"',
+    frames: [
+      { en: 'It is ___ today.', ko: '오늘은 ___해요', ex: 'It is cold and windy today.', exKo: '오늘은 춥고 바람이 불어요.' },
+      { en: "It's going to ___ tomorrow, so I will ___.", ko: '내일 ___할 거라서 나는 ___할 거예요', ex: "It's going to rain tomorrow, so I will take an umbrella.", exKo: '내일 비가 온대서 나는 우산을 가져갈 거예요.' },
+      { en: 'My favorite season is ___ because ___.', ko: '내가 제일 좋아하는 계절은 ___예요. ___하거든요', ex: 'My favorite season is fall because it is cool.', exKo: '내가 제일 좋아하는 계절은 가을이에요. 선선하거든요.' }
+    ],
+    q: ['How is the weather today?', 'What will the weather be like tomorrow?', 'What do you do when it rains?', 'What is your favorite season?', 'Why do you like it?', 'What do you usually do in summer?'] },
+  { ko: '취미와 쉬는 시간', en: 'your hobbies and free time', goal: '취미를 말하고 because로 이유 붙이기', goalEn: 'talk about hobbies and give reasons with "because"',
+    frames: [
+      { en: 'In my free time, I like to ___.', ko: '쉬는 시간에 나는 ___하는 걸 좋아해요', ex: 'In my free time, I like to watch movies.', exKo: '쉬는 시간에 나는 영화 보는 걸 좋아해요.' },
+      { en: 'I like it because ___.', ko: '___해서 그걸 좋아해요', ex: 'I like it because it helps me relax.', exKo: '마음이 편해져서 그걸 좋아해요.' },
+      { en: 'I started ___ when I was ___.', ko: '나는 ___살 때 ___를 시작했어요', ex: 'I started playing golf when I was thirty.', exKo: '나는 서른 살 때 골프를 시작했어요.' }
+    ],
+    q: ['What do you do in your free time?', 'Why do you like it?', 'When did you start it?', 'Who do you do it with?', 'How often do you do it?', 'What new hobby do you want to try, and why?'] },
+  { ko: '여행 경험', en: 'travel', goal: '여행 경험을 과거형으로 말하고 이유 붙이기', goalEn: 'talk about a past trip and give reasons (past simple + because)',
+    frames: [
+      { en: 'I went to ___ last ___.', ko: '나는 지난 ___에 ___에 갔어요', ex: 'I went to Jeju Island last year.', exKo: '나는 작년에 제주도에 갔어요.' },
+      { en: 'The best part was ___ because ___.', ko: '제일 좋았던 건 ___였어요. ___했거든요', ex: 'The best part was the food because it was fresh.', exKo: '제일 좋았던 건 음식이었어요. 신선했거든요.' },
+      { en: 'Next time, I want to go to ___ because ___.', ko: '다음에는 ___에 가고 싶어요. ___하거든요', ex: 'Next time, I want to go to Japan because I love ramen.', exKo: '다음에는 일본에 가고 싶어요. 라멘을 좋아하거든요.' }
+    ],
+    q: ['Do you like traveling?', 'Where did you go on your last trip?', 'Who did you go with?', 'What did you do there?', 'What was the best part, and why?', 'Where do you want to go next?'] }
+];
+const PER_TOPIC = 3;                      // 한 주제당 대화 횟수
+let D = null;                             // 학습 기록 (ec_data_v1)
+
+function levelCode() { return D && D.profile && LEVEL_RULES[D.profile.level] ? D.profile.level : 'A2'; }
+function curTopic() { return TOPICS[D ? D.topicIdx : 0] || TOPICS[0]; }
+function lessonAttempt() { return D ? D.topicCount + 1 : 1; }
+
+const tutorPrompt = () => {
+  const L = LEVEL_RULES[levelCode()];
+  const t = curTopic();
+  const n = lessonAttempt();
+  return [
+    'You are a friendly English conversation tutor.',
+    'The learner is Korean, ' + L.who + '.',
+    'RESPOND IN ENGLISH. YOU MUST RESPOND UNMISTAKABLY IN ENGLISH, even if the learner speaks Korean.',
+    'RESCUE RULE: when the learner says something in Korean, or gets stuck and mixes Korean words in, they need help. Then do exactly this: say "You can say:" and give the natural English sentence for what they meant, slowly, in simple words (10 words or fewer). Then say "Try it." and wait. After they repeat it, say "Good!" and continue with the next question. A rescue does not count as one of the answers.',
+    L.speed,
+    L.ask,
+    'Do NOT explain grammar and do NOT point out mistakes. Only RECAST: when the learner says something incorrectly, repeat their idea back ONCE in the correct form, naturally, as your short reaction, then ask your next question. Example: Learner: "I go to hospital yesterday." You: "Oh, you went to the hospital yesterday. Why did you go?"',
+    'If the learner answers with only one or two words, ask them ONCE to say it in a full sentence, for example "Can you say it in a full sentence?" Do not ask this again for the same question; accept the answer and move on.',
+    'Keep every reply under 20 words. You are only a conversation partner: never give advice, warnings, or disclaimers.',
+    'If you could not understand the learner, say so in a few words and ask them to say it again.',
+    'First react briefly to what the learner said (a few words), then ask one follow-up question.',
+    '',
+    'TODAY\'S TOPIC: ' + t.en + '.',
+    'Lesson goal: ' + t.goalEn + '.',
+    'Stay inside this topic. Use these questions, easiest first. You may change the words a little and add natural follow-up questions about the same topic:',
+    ...t.q.map((q, i) => (i + 1) + '. ' + q),
+    'The learner practiced these sentence patterns just before this conversation. Ask questions that make the learner use them, and use the same patterns in your recasts:',
+    ...t.frames.map(f => '- ' + f.en + ' (example: ' + f.ex + ')'),
+    n <= 1
+      ? 'This is the learner\'s FIRST conversation on this topic. Ask the questions roughly in the order above.'
+      : 'This is conversation number ' + n + ' of ' + PER_TOPIC + ' on this topic. The learner has answered these questions before. Ask them in a DIFFERENT order from the list, and ask one or two extra follow-up questions about details (who, where, when, why, how).',
+    '',
+    'Start by greeting the learner in one short sentence and asking your first question about today\'s topic.',
+    'Count the learner\'s answers. After the learner\'s answer number ' + TURNS + ', say ONE short goodbye sentence and do not ask any more questions.'
+  ].join('\n');
+};
+
+// 번갈아 말하기의 첫 말 (주제에 맞춤)
+function pickOpener() {
+  try {
+    const t = curTopic();
+    const q = lessonAttempt() <= 1 ? t.q[0] : t.q[Math.floor(Math.random() * t.q.length)];
+    return 'Hi! Today let\'s talk about ' + t.en + '. ' + q;
+  } catch (e) { return OPENERS[Math.floor(Math.random() * OPENERS.length)]; }
+}
 
 const OPENERS = [
   'Hi! How was your day today?',
@@ -764,10 +1105,8 @@ function showStartErr(t) { const el = $('startErr'); el.textContent = t; el.clas
 
 function enterTalkUI() {
   $('chat').innerHTML = '';
-  show('talkCard', true);
-  show('resultCard', false);
-  show('modeCard', false);
-  show('keyCard', false);
+  renderTalkFrames();
+  go('talk');
   setStatus('준비 중');
   setBig('준비 중', 'wait', false);
   $('endBtn').disabled = false;
@@ -775,9 +1114,8 @@ function enterTalkUI() {
   window.scrollTo(0, 0);
 }
 function exitToHome() {
-  show('talkCard', false);
-  show('modeCard', true);
-  show('keyCard', true);
+  // 시작 실패 시: 준비 화면으로 돌아가 startErr 를 보여 준다
+  go('prep');
   refreshKeyUI();
 }
 
@@ -1006,7 +1344,7 @@ function speak(s, text) {
 
 async function startTurns(s) {
   s.history = [];
-  const opener = OPENERS[Math.floor(Math.random() * OPENERS.length)];
+  const opener = pickOpener();
   addBubble('ai', opener);
   s.history.push({ role: 'tutor', text: opener });
   setBig('AI 말하는 중', 'wait', false);
@@ -1055,7 +1393,7 @@ async function sendTurn(s) {
     '1) "heard": write exactly what the learner said, word for word, in English letters. Do NOT fix grammar or pronunciation. If you cannot hear speech, write "".',
     isLast
       ? '2) "reply": this was the learner\'s final answer. React in a few words and say ONE short goodbye sentence. Do NOT ask a question.'
-      : '2) "reply": react briefly in a few words, then ask ONE short follow-up question (12 words or fewer). Do not correct mistakes.'
+      : '2) "reply": react briefly in a few words, then ask ONE short follow-up question (' + LEVEL_RULES[levelCode()].qWords + ' words or fewer). Do not explain mistakes; if the learner made one, just recast it once in the correct form inside your reaction.'
   ].join('\n');
   const body = {
     model: TURN_MODEL,
@@ -1222,7 +1560,8 @@ async function finishConversation(reason) {
     openerMs: s.openerLatency || null,
     turnLatencies: s.turnLatencies,
     userTurns: s.userTurns,
-    recSec: +(s.recLen / TARGET_RATE).toFixed(1)
+    recSec: +(s.recLen / TARGET_RATE).toFixed(1),
+    lesson: { topicIdx: D ? D.topicIdx : 0, attempt: lessonAttempt(), level: levelCode() }
   };
   if (pcm.length) {
     try {
@@ -1267,7 +1606,7 @@ async function analyze(pcm, transcript) {
     convo,
     '',
     'Return JSON with:',
-    '- "grammar": at most 4 items, using the learner\'s real sentences. Include ONLY sentences that have a real grammar or word-choice error; never list a sentence that is already correct, and do not treat contractions as errors. "said" = what the learner said, "corrected" = a natural corrected sentence, "reason_ko" = one short reason in Korean. Return an empty list if there are no errors.',
+    '- "grammar": at most 4 items, using the learner\'s real sentences. Include ONLY sentences that have a real grammar or word-choice error; never list a sentence that is already correct, and do not treat contractions as errors. "said" = what the learner said, "corrected" = a natural corrected sentence, "reason_ko" = one short reason in Korean, "meaning_ko" = the natural Korean meaning of the corrected sentence (one short sentence, polite style). Return an empty list if there are no errors.',
     '- "pronunciation": at most 5 items. Report ONLY words you clearly heard mispronounced in THIS audio. Do NOT flag words that sounded fine. Do NOT guess based on mistakes Korean learners commonly make. If you are not sure, leave it out. An empty list is fine. "word" = the English word, "heard_as_ko" = how it actually sounded (in Korean, you may quote the sound), "fix_ko" = how to fix it with mouth or tongue tips (in Korean).',
     '- "good_point_ko": one sentence in Korean about something specific the learner did well.',
     'Korean writing rules: short sentences, polite style, no emoji, no em dash, no middle dot.'
@@ -1275,7 +1614,7 @@ async function analyze(pcm, transcript) {
   const schema = {
     type: 'object',
     properties: {
-      grammar: { type: 'array', items: { type: 'object', properties: { said: { type: 'string' }, corrected: { type: 'string' }, reason_ko: { type: 'string' } }, required: ['said', 'corrected', 'reason_ko'] } },
+      grammar: { type: 'array', items: { type: 'object', properties: { said: { type: 'string' }, corrected: { type: 'string' }, reason_ko: { type: 'string' }, meaning_ko: { type: 'string' } }, required: ['said', 'corrected', 'reason_ko', 'meaning_ko'] } },
       pronunciation: { type: 'array', items: { type: 'object', properties: { word: { type: 'string' }, heard_as_ko: { type: 'string' }, fix_ko: { type: 'string' } }, required: ['word', 'heard_as_ko', 'fix_ko'] } },
       good_point_ko: { type: 'string' }
     },
@@ -1378,11 +1717,12 @@ async function reAnalyze() {
 }
 function showResult(result, fromStorage) {
   lastResult = result;
-  show('talkCard', false);
-  show('keyCard', true);
-  show('modeCard', true);
+  if (!fromStorage) {
+    storedResult = result;
+    try { recordSession(result); } catch (e) { log('기록 반영 실패: ' + (e && e.message), 'ERR'); }
+  }
+  go('result');
   refreshKeyUI();
-  show('resultCard', true);
   $('resultTitle').textContent = fromStorage ? '지난 결과' : '결과';
   if (!fromStorage) {
     try { localStorage.setItem(LS_RESULT, JSON.stringify(result)); } catch (e) { log('결과 저장 실패: ' + e.message, 'WARN'); }
@@ -1401,11 +1741,13 @@ function showResult(result, fromStorage) {
     h += p.length ? p.map(x => '<div class="item"><div class="fixed">' + esc(x.word) + '</div>' + sayButtons(x.word) + '<div class="why">들린 소리: ' + esc(x.heard_as_ko) + '</div><div>' + esc(x.fix_ko) + '</div></div>').join('') : '<p class="empty">확실히 틀린 발음은 없었습니다.</p>';
     h += '<h3>잘한 점</h3><p>' + esc(a.good_point_ko || '') + '</p>';
   }
+  if (!fromStorage) h += '<h3>다시 말해 보기</h3><div id="rptBox"></div>';
   h += '<h3>걸린 시간</h3><div class="timing">' + timingLines(result).map(esc).join('<br>') + '</div>';
   h += '<h3>대화 내용</h3><div class="timing">' + (result.transcript || []).map(x => esc((x.role === 'ai' ? 'AI: ' : '나: ') + x.text)).join('<br>') + '</div>';
   $('resultBody').innerHTML = h;
   const rb = $('reAnalyzeBtn');
   if (rb) rb.addEventListener('click', reAnalyze);
+  if (!fromStorage) startRepeat(a);
   $('resultCard').scrollIntoView({ block: 'start' });
   log('결과 표시 (분석 모델=' + (result.analysisModel || '없음') + ', 분석 ' + (result.analysisMs || 0) + 'ms)');
 }
@@ -1455,9 +1797,8 @@ $('copyResultBtn').addEventListener('click', async () => {
   flash($('copyResultBtn'), ok ? '복사했습니다' : '복사 실패');
 });
 $('newBtn').addEventListener('click', () => {
-  show('resultCard', false);
   $('startErr').classList.add('hidden');
-  window.scrollTo(0, 0);
+  go('home');
 });
 
 /* ===================== 진단 패널 ===================== */
@@ -1484,9 +1825,9 @@ function langHintOk() { try { return localStorage.getItem('ec_lang_hint_bad') !=
 /* ===================== 대화 길이 ===================== */
 (() => {
   const sel = $('lenSel');
-  let saved = 3;
-  try { saved = parseInt(localStorage.getItem('ec_turns') || '3', 10) || 3; } catch (e) {}
-  if (![3, 8, 20].includes(saved)) saved = 3;
+  let saved = 8;
+  try { saved = parseInt(localStorage.getItem('ec_turns') || '8', 10) || 8; } catch (e) {}
+  if (![3, 8, 20].includes(saved)) saved = 8;
   TURNS = saved; sel.value = String(saved);
   sel.addEventListener('change', () => {
     TURNS = parseInt(sel.value, 10) || 3;
@@ -1495,9 +1836,450 @@ function langHintOk() { try { return localStorage.getItem('ec_lang_hint_bad') !=
   });
 })();
 
+/* ===================== 학습 흐름 (0.2.0) ===================== */
+const LS_DATA = 'ec_data_v1';
+const INTERVALS = [1, 3, 7, 14, 30];      // 복습 간격(일). 30일 통과하면 졸업
+const REVIEW_MAX = 6;                     // 한 번에 최대 카드 수
+const REVIEW_MS = 2 * 60 * 1000;          // 복습 2분 상한
+let storedResult = null;                  // 가장 최근 결과 (ec_last_result)
+let curScreen = '';
+
+/* ---- 날짜 (기기 현지 날짜) ---- */
+function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function todayStr() { return ymd(new Date()); }
+function addDays(s, n) { const p = s.split('-').map(Number); return ymd(new Date(p[0], p[1] - 1, p[2] + n)); }
+function koDate(s) { const p = s.split('-').map(Number); return p[1] + '월 ' + p[2] + '일'; }
+
+/* ---- 저장 ---- */
+function newD(name, level) {
+  return { profile: { name: name || '', level: level || 'A2', created: todayStr() }, topicIdx: 0, topicCount: 0, cards: [], history: [], days: {}, sounds: {} };
+}
+function normD(o) {
+  if (!o || typeof o !== 'object' || !o.profile || typeof o.profile !== 'object') return null;
+  const idx = parseInt(o.topicIdx, 10);
+  const cnt = parseInt(o.topicCount, 10);
+  return {
+    profile: { name: String(o.profile.name || '').slice(0, 20), level: LEVEL_RULES[o.profile.level] ? o.profile.level : 'A2', created: String(o.profile.created || todayStr()) },
+    topicIdx: idx >= 0 && idx < TOPICS.length ? idx : 0,
+    topicCount: cnt >= 0 && cnt < PER_TOPIC ? cnt : 0,
+    cards: Array.isArray(o.cards) ? o.cards.filter(c => c && typeof c.back === 'string' && c.back) : [],
+    history: Array.isArray(o.history) ? o.history.filter(h => h && h.id) : [],
+    days: o.days && typeof o.days === 'object' ? o.days : {},
+    sounds: o.sounds && typeof o.sounds === 'object' ? o.sounds : {}
+  };
+}
+function loadD() {
+  let raw = null;
+  try { raw = localStorage.getItem(LS_DATA); } catch (e) { log('기록 읽기 실패: ' + e.message, 'ERR'); return null; }
+  if (!raw) return null;
+  try {
+    const d = normD(JSON.parse(raw));
+    if (!d) throw new Error('형식이 맞지 않음');
+    return d;
+  } catch (e) {
+    log('기록이 깨져 있어 새로 시작합니다: ' + e.message, 'ERR');
+    try { localStorage.setItem(LS_DATA + '_broken', raw); } catch (e2) {}
+    return null;
+  }
+}
+function saveD() {
+  if (!D) return;
+  if (D.history.length > 1000) D.history.splice(0, D.history.length - 1000);
+  try { localStorage.setItem(LS_DATA, JSON.stringify(D)); }
+  catch (e) { log('기록 저장 실패: ' + (e && (e.name + ': ' + e.message)), 'ERR'); }
+}
+function setTurns(n) {
+  TURNS = n;
+  $('lenSel').value = String(n);
+  try { localStorage.setItem('ec_turns', String(n)); } catch (e) {}
+}
+
+/* ---- 화면 전환 ---- */
+const SCREENS = { profile: 'scrProfile', home: 'scrHome', prep: 'scrPrep', talk: 'talkCard', result: 'resultCard', done: 'scrDone', review: 'scrReview', history: 'scrHistory', settings: 'scrSettings' };
+function go(name) {
+  if (!D && name !== 'profile') name = 'profile';
+  Object.keys(SCREENS).forEach(k => show(SCREENS[k], k === name));
+  curScreen = name;
+  show('nav', name !== 'talk' && name !== 'profile');
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.getAttribute('data-go') === name));
+  if (name === 'profile') renderProfile();
+  else if (name === 'home') renderHome();
+  else if (name === 'prep') renderPrep();
+  else if (name === 'done') renderDone();
+  else if (name === 'history') renderHistory();
+  else if (name === 'settings') renderSettings();
+  window.scrollTo(0, 0);
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('[data-go]');
+  if (!b) return;
+  if (S && !S.ended) return; // 대화 중에는 이동하지 않음
+  go(b.getAttribute('data-go'));
+});
+
+function levelChoices(name, sel) {
+  return LEVELS.map(l => '<label class="choice"><input type="radio" name="' + name + '" value="' + l.code + '"' + (l.code === sel ? ' checked' : '') + '><div><b>' + esc(l.ko) + '(' + l.code + ')</b><span>' + esc(l.desc) + '</span></div></label>').join('');
+}
+function checkedLevel(name) { const el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : 'A2'; }
+
+/* ---- 프로필 (처음 한 번) ---- */
+function renderProfile() { $('pfLevels').innerHTML = levelChoices('pfLevel', 'A2'); }
+$('pfSaveBtn').addEventListener('click', () => {
+  D = newD($('pfName').value.trim().slice(0, 20), checkedLevel('pfLevel'));
+  setTurns(8); // 0.2.0 부터 기본 8번 대답
+  saveD();
+  log('프로필 만듦: 수준=' + D.profile.level);
+  go('home');
+});
+
+/* ---- 홈 ---- */
+function dueCards() {
+  const t = todayStr();
+  return D.cards.filter(c => !c.done && c.due <= t).sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : (a.created < b.created ? -1 : 1)));
+}
+function streakDays() {
+  let s = todayStr();
+  if (!D.days[s]) s = addDays(s, -1);
+  let n = 0;
+  while (D.days[s]) { n++; s = addDays(s, -1); }
+  return n;
+}
+function weekInfo() {
+  const t = todayStr();
+  const mon = addDays(t, -((new Date().getDay() + 6) % 7));
+  const names = ['월', '화', '수', '목', '금', '토', '일'];
+  let n = 0;
+  const html = names.map((nm, i) => {
+    const d = addDays(mon, i);
+    const on = !!D.days[d];
+    if (on) n++;
+    return '<div class="' + (on ? 'on ' : '') + (d === t ? 'today' : '') + '"><i></i>' + nm + '</div>';
+  }).join('');
+  return { html, n };
+}
+function todayTalks() { const t = todayStr(); return D.history.filter(h => h.day === t && h.counted).length; }
+function reviewedToday() { const t = todayStr(); return D.cards.filter(c => c.last === t).length; }
+function nextStep() { return dueCards().length > 0 && reviewedToday() === 0 ? 'review' : 'prep'; }
+
+function renderHome() {
+  if (!D) return;
+  const name = D.profile.name;
+  $('homeHello').textContent = (name ? name + '님, ' : '') + '오늘도 10분만 해 봐요.';
+  $('streakN').textContent = String(streakDays());
+  const w = weekInfo();
+  $('weekRow').innerHTML = w.html;
+  $('weekN').textContent = '이번 주 ' + w.n + '일 했어요';
+  show('noKeyCard', !getKey());
+  show('pendingCard', !!(storedResult && !storedResult.analysis && lastAnalysisInput));
+
+  const due = dueCards().length;
+  const rv = reviewedToday();
+  const talks = todayTalks();
+  const t = curTopic();
+  const step = nextStep();
+  let rvText;
+  if (due > 0 && rv === 0) rvText = '오늘 할 카드 ' + Math.min(due, REVIEW_MAX) + '장' + (due > REVIEW_MAX ? ' (나머지는 다음에)' : '');
+  else if (rv > 0) rvText = '오늘 ' + rv + '장 했어요' + (due > 0 ? '. 남은 ' + due + '장은 다음에' : '');
+  else rvText = '오늘 복습 없음';
+  const reviewDone = !(due > 0 && rv === 0);
+  const items = [
+    { title: '복습', text: rvText, done: reviewDone, next: step === 'review' },
+    { title: '준비', text: '"' + t.ko + '" 문장 틀 3개 듣기', done: talks > 0, next: step === 'prep' && talks === 0 },
+    { title: '대화', text: talks > 0 ? '오늘 ' + talks + '번 했어요' : 'AI와 ' + TURNS + '번 대답하기', done: talks > 0, next: false }
+  ];
+  $('homeSteps').innerHTML = items.map((it, i) => '<li class="' + (it.done ? 'done' : it.next ? 'next' : '') + '"><div class="num">' + (it.done ? '끝' : (i + 1)) + '</div><div><b>' + esc(it.title) + '</b><span>' + esc(it.text) + '</span></div></li>').join('');
+  $('goBtn').textContent = step === 'review' ? '오늘 연습 시작 (복습부터)' : talks > 0 ? '한 번 더 연습하기' : '오늘 연습 시작';
+  $('homeTopic').innerHTML = '<div class="ttl">' + esc(t.ko) + ' (' + lessonAttempt() + ' / ' + PER_TOPIC + '번째)</div><div class="goal">' + esc(t.goal) + '</div><div class="note" style="margin:0">주제 ' + (D.topicIdx + 1) + ' / ' + TOPICS.length + '. 대화를 ' + PER_TOPIC + '번 하면 다음 주제로 넘어가요.</div>';
+}
+$('goBtn').addEventListener('click', () => { if (nextStep() === 'review') startReview(); else go('prep'); });
+$('pendingBtn').addEventListener('click', () => { if (storedResult) showResult(storedResult, true); });
+$('nextTopicBtn').addEventListener('click', () => {
+  const nx = TOPICS[(D.topicIdx + 1) % TOPICS.length];
+  if (!confirm('"' + nx.ko + '" 주제로 넘어갈까요?')) return;
+  D.topicIdx = (D.topicIdx + 1) % TOPICS.length; D.topicCount = 0; saveD();
+  log('주제 넘김: ' + (D.topicIdx + 1));
+  renderHome();
+});
+$('prevTopicBtn').addEventListener('click', () => {
+  const pi = (D.topicIdx - 1 + TOPICS.length) % TOPICS.length;
+  if (!confirm('"' + TOPICS[pi].ko + '" 주제를 처음부터 다시 할까요?')) return;
+  D.topicIdx = pi; D.topicCount = 0; saveD();
+  log('이전 주제로: ' + (D.topicIdx + 1));
+  renderHome();
+});
+
+/* ---- 준비 ---- */
+function framesHtml(t, withSay) {
+  return t.frames.map(f => '<div class="frame"><div class="en">' + esc(f.en) + '</div><div class="ko">' + esc(f.ko) + '</div><div class="ex">예: ' + esc(f.ex) + '</div><div class="exko">' + esc(f.exKo) + '</div>' + (withSay ? sayButtons(f.ex) : '') + '</div>').join('');
+}
+function renderPrep() {
+  const t = curTopic();
+  $('prepTitle').textContent = t.ko + ' (' + lessonAttempt() + ' / ' + PER_TOPIC + '번째)';
+  $('prepGoal').textContent = '목표: ' + t.goal;
+  $('prepFrames').innerHTML = framesHtml(t, true);
+  const modeEl = document.querySelector('input[name=mode]:checked');
+  const live = !modeEl || modeEl.value === 'live';
+  $('prepMode').textContent = '대화 방식: ' + (live ? '실시간 대화' : '번갈아 말하기') + ', ' + TURNS + '번 대답. 설정에서 바꿀 수 있어요.';
+  show('prepNoKey', !getKey());
+}
+function renderTalkFrames() {
+  // 대화 중에는 소리 버튼 없이 글만 (마이크와 겹치지 않게)
+  $('talkFramesBody').innerHTML = framesHtml(curTopic(), false);
+  $('talkFrames').open = false;
+}
+
+/* ---- 대화 기록 반영 ---- */
+function normSent(s) { return String(s || '').toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+function addCard(c) {
+  if (!c.back || !normSent(c.back)) return false;
+  const key = normSent(c.back);
+  if (D.cards.some(x => normSent(x.back) === key)) return false;
+  const t = todayStr();
+  D.cards.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    front: c.front || '', back: c.back, said: c.said || '', why: c.why || '', src: c.src, topicIdx: c.topicIdx,
+    stage: 0, due: addDays(t, INTERVALS[0]), created: t, last: null, done: false
+  });
+  return true;
+}
+function recordSession(r) {
+  if (!D) return null;
+  const m = r.meta || {};
+  if (!m.date) return null;
+  const turns = m.userTurns || 0;
+  let h = D.history.find(x => x.id === m.date);
+  if (!h) {
+    if (turns < 1) { log('대답이 없어 기록하지 않음'); return null; }
+    const ls = m.lesson || { topicIdx: D.topicIdx, attempt: D.topicCount + 1 };
+    const dt = new Date(m.date);
+    h = {
+      id: m.date, day: ymd(dt), time: pad(dt.getHours()) + ':' + pad(dt.getMinutes()),
+      topicIdx: ls.topicIdx, attempt: ls.attempt, turns, mode: m.mode,
+      counted: m.reason === '완료' || turns >= 3,
+      grammarN: 0, pronN: 0, model: null, analyzed: false, topicDone: false
+    };
+    D.history.push(h);
+    if (h.counted) {
+      D.days[h.day] = true;
+      if (ls.topicIdx === D.topicIdx) {
+        if (D.topicCount === 0) {
+          // 이 주제 첫 대화: 준비 화면 예문을 카드로
+          const tp = TOPICS[D.topicIdx];
+          tp.frames.forEach(f => addCard({ front: f.exKo, back: f.ex, src: 'frame', topicIdx: D.topicIdx }));
+        }
+        D.topicCount++;
+        if (D.topicCount >= PER_TOPIC) {
+          h.topicDone = true;
+          D.topicIdx = (D.topicIdx + 1) % TOPICS.length;
+          D.topicCount = 0;
+          log('주제 완료, 다음 주제로: ' + (D.topicIdx + 1));
+        }
+      }
+    }
+  }
+  const a = r.analysis;
+  if (a && !h.analyzed) {
+    const g = (Array.isArray(a.grammar) ? a.grammar : []).slice(0, 4);
+    const p = (Array.isArray(a.pronunciation) ? a.pronunciation : []).slice(0, 5);
+    h.analyzed = true;
+    h.model = r.analysisModel || null;
+    h.grammarN = g.length;
+    h.pronN = p.length;
+    let added = 0;
+    g.forEach(x => { if (x && x.corrected && addCard({ front: x.meaning_ko || '', back: x.corrected, said: x.said, why: x.reason_ko, src: 'grammar', topicIdx: h.topicIdx })) added++; });
+    p.forEach(x => { const w = String((x && x.word) || '').toLowerCase().trim(); if (w) D.sounds[w] = (D.sounds[w] || 0) + 1; });
+    log('기록 반영: 고친 문장 ' + g.length + '개, 새 카드 ' + added + '장, 발음 ' + p.length + '개');
+  }
+  saveD();
+  return h;
+}
+
+/* ---- 결과: 다시 말해 보기 ---- */
+let rpt = { items: [], i: 0, hasAnalysis: false };
+function startRepeat(a) {
+  rpt = { items: (a && Array.isArray(a.grammar) ? a.grammar : []).filter(x => x && x.corrected).slice(0, 3), i: 0, hasAnalysis: !!a };
+  renderRepeat();
+}
+function renderRepeat() {
+  const box = $('rptBox');
+  if (!box) return;
+  if (rpt.i < rpt.items.length) {
+    const x = rpt.items[rpt.i];
+    box.innerHTML = '<div class="note" style="margin:0">' + (rpt.i + 1) + ' / ' + rpt.items.length + '</div>' +
+      (x.meaning_ko ? '<div class="rko">' + esc(x.meaning_ko) + '</div>' : '') +
+      '<div class="en-big">' + esc(x.corrected) + '</div>' + sayButtons(x.corrected) +
+      '<p class="note">듣고 소리 내어 두 번 따라 말해 보세요.</p>' +
+      '<button type="button" id="rptNextBtn" class="primary start">따라 말했어요</button>';
+    $('rptNextBtn').addEventListener('click', () => { rpt.i++; renderRepeat(); });
+  } else {
+    let msg;
+    if (rpt.items.length) msg = '다 했어요. 이 문장들은 내일 복습 카드로 다시 나와요.';
+    else if (rpt.hasAnalysis) msg = '고칠 문장이 없었어요. 잘했어요.';
+    else msg = '분석 결과가 없어 따라 할 문장이 없어요.';
+    box.innerHTML = '<p>' + esc(msg) + '</p><button type="button" id="rptDoneBtn" class="primary start">오늘 연습 끝</button>';
+    $('rptDoneBtn').addEventListener('click', () => go('done'));
+  }
+}
+
+/* ---- 오늘 연습 끝 ---- */
+function renderDone() {
+  const t = todayStr();
+  const last = D.history.filter(h => h.day === t && h.counted).pop() || null;
+  const rows = [
+    ['오늘 대화', todayTalks() + '번'],
+    ['오늘 새로 생긴 복습 카드', D.cards.filter(c => c.created === t).length + '장'],
+    ['오늘 복습한 카드', reviewedToday() + '장'],
+    ['연속', streakDays() + '일']
+  ];
+  let topicLine;
+  if (last && last.day === t && last.topicDone) topicLine = '"' + TOPICS[last.topicIdx].ko + '" 주제를 ' + PER_TOPIC + '번 끝냈어요. 다음 주제는 "' + curTopic().ko + '"예요.';
+  else topicLine = '"' + curTopic().ko + '" 주제 ' + D.topicCount + ' / ' + PER_TOPIC + '번 했어요.';
+  $('doneBody').innerHTML = '<p>' + esc(topicLine) + '</p>' + rows.map(r => '<div class="sumrow"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '<p class="note">내일은 복습 카드부터 시작해요.</p>';
+}
+
+/* ---- 복습 ---- */
+let rv = null;
+function startReview() {
+  const list = dueCards().slice(0, REVIEW_MAX);
+  rv = { list, i: 0, good: 0, startedAt: Date.now() };
+  log('복습 시작: ' + list.length + '장 (밀린 카드 ' + dueCards().length + '장)');
+  go('review');
+  if (!list.length) { renderReviewEnd(); return; }
+  renderReviewCard();
+}
+function renderReviewCard() {
+  const c = rv.list[rv.i];
+  show('rvCardBox', true); show('rvEnd', false);
+  $('rvCount').textContent = '복습 ' + (rv.i + 1) + ' / ' + rv.list.length;
+  $('rvFront').textContent = c.front || ('뜻이 없는 카드예요. 이 말을 바르게 고쳐 말해 보세요: ' + (c.said || ''));
+  show('rvShowBtn', true);
+  show('rvBack', false);
+}
+$('rvShowBtn').addEventListener('click', () => {
+  const c = rv && rv.list[rv.i];
+  if (!c) return;
+  $('rvEn').textContent = c.back;
+  $('rvSay').innerHTML = sayButtons(c.back);
+  let more = '';
+  if (c.said) more += '<div class="said">내가 한 말: ' + esc(c.said) + '</div>';
+  if (c.why) more += '<div>' + esc(c.why) + '</div>';
+  $('rvMore').innerHTML = more;
+  show('rvShowBtn', false);
+  show('rvBack', true);
+});
+function answerCard(ok) {
+  const c = rv && rv.list[rv.i];
+  if (!c) return;
+  const t = todayStr();
+  if (ok) {
+    rv.good++;
+    if (c.stage >= INTERVALS.length - 1) { c.done = true; c.due = '9999-12-31'; }
+    else { c.stage++; c.due = addDays(t, INTERVALS[c.stage]); }
+  } else { c.stage = 0; c.due = addDays(t, INTERVALS[0]); }
+  c.last = t;
+  D.days[t] = true;
+  saveD();
+  rv.i++;
+  if (rv.i >= rv.list.length || Date.now() - rv.startedAt > REVIEW_MS) renderReviewEnd();
+  else renderReviewCard();
+}
+$('rvGoodBtn').addEventListener('click', () => answerCard(true));
+$('rvBadBtn').addEventListener('click', () => answerCard(false));
+function renderReviewEnd() {
+  show('rvCardBox', false); show('rvEnd', true);
+  $('rvCount').textContent = '복습';
+  const left = dueCards().length;
+  let h;
+  if (!rv.list.length) h = '<p>오늘 복습 없음. 바로 준비로 가요.</p>';
+  else h = '<h2 class="ttl">복습 끝</h2><p>' + rv.i + '장 중 ' + rv.good + '장 말했어요.' + (left ? ' 남은 ' + left + '장은 다음에 해요.' : '') + '</p>';
+  h += '<button type="button" data-go="prep" class="primary start">다음: 준비</button><button type="button" data-go="home" class="wide" style="margin-top:8px">홈으로</button>';
+  $('rvEnd').innerHTML = h;
+  log('복습 끝: ' + rv.i + '장 중 ' + rv.good + '장 맞음');
+}
+
+/* ---- 기록 ---- */
+function renderHistory() {
+  const active = D.cards.filter(c => !c.done).length;
+  const grad = D.cards.length - active;
+  const talks = D.history.filter(h => h.counted).length;
+  $('histSummary').innerHTML = [
+    ['연습한 날', Object.keys(D.days).length + '일'],
+    ['연속', streakDays() + '일'],
+    ['대화', talks + '번'],
+    ['복습 카드', '공부 중 ' + active + '장, 졸업 ' + grad + '장']
+  ].map(r => '<div class="sumrow"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('');
+  show('lastResultBtn', !!storedResult);
+  const top = Object.keys(D.sounds).map(w => [w, D.sounds[w]]).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  $('histSounds').innerHTML = top.length
+    ? top.map(x => '<div class="sumrow"><span>' + esc(x[0]) + ' ' + sayButtons(x[0]) + '</span><b>' + x[1] + '번</b></div>').join('')
+    : '<p class="empty">아직 없어요.</p>';
+  const list = D.history.slice().reverse();
+  $('histList').innerHTML = list.length ? list.map(h => {
+    const tp = TOPICS[h.topicIdx] ? TOPICS[h.topicIdx].ko : '?';
+    return '<div class="hist"><b>' + esc(koDate(h.day)) + ' ' + esc(h.time || '') + '</b> ' + esc(tp) + ' ' + esc(h.attempt) + '번째' + (h.counted ? '' : ' (짧게 끝남)') +
+      '<div class="note" style="margin:2px 0 0">대답 ' + esc(h.turns) + '번, 고친 문장 ' + esc(h.grammarN) + '개, 발음 지적 ' + esc(h.pronN) + '개' + (h.model ? ', ' + esc(h.model) : (h.analyzed ? '' : ', 분석 없음')) + '</div></div>';
+  }).join('') : '<p class="empty">아직 기록이 없어요.</p>';
+  $('importMsg').textContent = '';
+}
+$('lastResultBtn').addEventListener('click', () => { if (storedResult) showResult(storedResult, true); });
+function exportText() { return JSON.stringify({ app: 'ec', version: APP_VERSION, exported: new Date().toISOString(), data: D }); }
+$('exportFileBtn').addEventListener('click', () => {
+  try {
+    const url = URL.createObjectURL(new Blob([exportText()], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = '영어연습_기록_' + todayStr() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    log('기록 파일 저장');
+  } catch (e) { log('기록 파일 저장 실패: ' + e.message, 'ERR'); flash($('exportFileBtn'), '저장 실패'); }
+});
+$('exportCopyBtn').addEventListener('click', async () => {
+  const ok = await copyText(exportText());
+  flash($('exportCopyBtn'), ok ? '복사했습니다' : '복사 실패');
+});
+function importFrom(text) {
+  let o;
+  try { o = JSON.parse(text); } catch (e) { $('importMsg').textContent = '기록 형식이 아니에요.'; return; }
+  const d = normD(o && o.data ? o.data : o);
+  if (!d) { $('importMsg').textContent = '기록 형식이 아니에요.'; return; }
+  if (!confirm('지금 이 기기의 기록을 가져온 기록으로 바꿀까요? (카드 ' + d.cards.length + '장, 대화 ' + d.history.length + '번)')) return;
+  D = d; saveD();
+  log('기록 가져옴: 카드 ' + d.cards.length + '장, 대화 ' + d.history.length + '번');
+  renderHistory();
+  $('importMsg').textContent = '가져왔어요.';
+}
+$('importFile').addEventListener('change', async ev => {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  try { importFrom(await f.text()); } catch (e) { $('importMsg').textContent = '파일을 읽지 못했어요.'; }
+  ev.target.value = '';
+});
+$('importTextBtn').addEventListener('click', () => {
+  const v = $('importText').value.trim();
+  if (!v) { $('importText').focus(); return; }
+  importFrom(v);
+  $('importText').value = '';
+});
+
+/* ---- 설정 ---- */
+function renderSettings() {
+  $('setName').value = D.profile.name || '';
+  $('setLevels').innerHTML = levelChoices('setLevel', D.profile.level);
+  refreshKeyUI();
+}
+$('setSaveBtn').addEventListener('click', () => {
+  D.profile.name = $('setName').value.trim().slice(0, 20);
+  D.profile.level = checkedLevel('setLevel');
+  saveD();
+  log('프로필 바꿈: 수준=' + D.profile.level);
+  flash($('setSaveBtn'), '저장했어요');
+});
+
 /* ===================== 초기화 ===================== */
 checkEnv();
 refreshKeyUI();
+D = loadD();
+go(D ? 'home' : 'profile');
 (async () => {
   try {
     const saved = localStorage.getItem(LS_RESULT);
@@ -1507,10 +2289,13 @@ refreshKeyUI();
         const inp = await idbGet('lastInput');
         if (inp && inp.meta && res.meta && inp.meta.date === res.meta.date) lastAnalysisInput = inp;
       }
-      showResult(res, true);
+      // 0.2.0: 지난 결과는 바로 띄우지 않고 홈(분석 안 된 경우)과 기록 화면에서 연다
+      storedResult = res;
+      if (!lastResult) lastResult = res;
+      if (curScreen === 'home') renderHome();
     }
   } catch (e) { log('지난 결과 읽기 실패: ' + e.message, 'WARN'); }
-  log('준비 완료');
+  log('준비 완료 (학습 기록 ' + (D ? '있음, 주제 ' + (D.topicIdx + 1) + ', 카드 ' + D.cards.length + '장' : '없음, 처음 실행') + ')');
 })();
 </script>
 </body>
