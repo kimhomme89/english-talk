@@ -195,6 +195,42 @@
   .filebtn input { display: none; }
   .sumrow { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding: 8px 0; }
   .sumrow:first-child { border-top: none; }
+  /* 0.3.0 */
+  :root { --warn: #a85400; --warn-bg: #fff1df; }
+  @media (prefers-color-scheme: dark) { :root { --warn: #ffb35c; --warn-bg: #3a2a14; } }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; margin: 0 0 8px; }
+  .badge.precise { background: var(--accent-weak); color: var(--accent); }
+  .badge.temp { background: var(--warn-bg); color: var(--warn); }
+  .ftag { display: inline-block; font-size: 12px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 6px; padding: 1px 7px; margin: 0 0 4px; }
+  .ctl { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .ctl button { font-size: 14px; padding: 6px 10px; min-height: 40px; }
+  .tgl.on { background: var(--ok); border-color: var(--ok); color: #fff; font-weight: 600; }
+  .item.rej { opacity: .55; }
+  details.low { border: 1px dashed var(--line); border-radius: 10px; padding: 6px 10px; margin: 8px 0; font-size: 14px; }
+  details.low summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; color: var(--muted); }
+  .focusbox { border: 2px solid var(--accent); border-radius: 12px; padding: 10px 12px; margin: 0 0 12px; overflow-wrap: anywhere; }
+  .focusbox p { margin: 4px 0 8px; font-size: 15px; }
+  .start.rec { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .small { font-size: 14px; padding: 6px 10px; min-height: 40px; }
+  .heard { margin: 10px 0 4px; font-size: 16px; overflow-wrap: anywhere; }
+  .okmsg { color: var(--ok); font-weight: 700; margin: 4px 0; }
+  .nomsg { color: var(--warn); font-weight: 700; margin: 4px 0; }
+  .askbox { border: 2px solid var(--warn); background: var(--warn-bg); border-radius: 12px; padding: 12px; margin: 12px 0; }
+  .askbox p { margin: 0 0 8px; }
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; margin: 6px 0; }
+  table.cmp th, table.cmp td { border-top: 1px solid var(--line); padding: 6px 4px; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: keep-all; }
+  table.cmp th { color: var(--muted); font-weight: 600; }
+  .ok-t { color: var(--ok); font-weight: 700; }
+  .no-t { color: var(--muted); }
+  .hold-t { color: var(--warn); font-weight: 600; }
+  details.gd { border-top: 1px solid var(--line); padding: 4px 0; }
+  details.gd summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+  details.gd p, details.gd ol { margin: 4px 0 10px; font-size: 15px; }
+  details.gd ol { padding-left: 20px; }
+  .gstep { border-top: 1px solid var(--line); padding: 10px 0; }
+  .gstep p { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+  .sumrow > span { min-width: 0; overflow-wrap: anywhere; }
+  .sumrow button { flex: none; margin-left: 8px; }
 </style>
 </head>
 <body>
@@ -204,6 +240,7 @@
     <nav id="nav" class="nav hidden">
       <button type="button" data-go="home">홈</button>
       <button type="button" data-go="history">기록</button>
+      <button type="button" data-go="guide">안내</button>
       <button type="button" data-go="settings">설정</button>
     </nav>
   </header>
@@ -232,9 +269,10 @@
       <p style="margin:0 0 8px">API 키가 아직 없어요. 설정에서 넣어 주세요.</p>
       <button type="button" data-go="settings" class="wide">설정으로 가기</button>
     </div>
-    <div class="card hidden" id="pendingCard">
-      <p style="margin:0 0 8px">지난 대화가 아직 분석되지 않았어요.</p>
-      <button type="button" id="pendingBtn" class="wide">지난 결과 열기</button>
+    <div class="card hidden" id="queueCard">
+      <h2>분석 대기</h2>
+      <div id="queueBody"></div>
+      <div id="queueMsg" class="note"></div>
     </div>
     <div class="card">
       <h2>오늘 할 것</h2>
@@ -249,6 +287,80 @@
         <button id="nextTopicBtn" type="button">다음 주제로 넘기기</button>
       </div>
     </div>
+    <div class="card" id="checkCard">
+      <h2>실력 확인</h2>
+      <div id="checkInfo"></div>
+      <div class="btnrow">
+        <button id="checkStartBtn" type="button" class="primary">실력 확인 하기</button>
+        <button id="checkLastBtn" type="button" class="hidden">지난 결과</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 처음 한 번: 짧은 안내 -->
+  <section class="screen hidden" id="scrIntro">
+    <div class="card">
+      <h2 class="ttl">이렇게 해요</h2>
+      <div class="gstep"><b>1. 하루 10분</b><p>복습 2분, 준비 1분, 대화, 다시 말해 보기 순서로 해요.</p></div>
+      <div class="gstep"><b>2. 막히면 한국어로 말하기</b><p>한국어로 말하면 AI가 영어 문장을 알려 줘요. 따라 말하면 돼요.</p></div>
+      <div class="gstep"><b>3. 대화 중에는 다른 앱으로 가지 않기</b><p>다른 앱이나 탭으로 넘어가면 대화가 끝나요.</p></div>
+      <p class="note">더 자세한 내용은 위쪽 "안내"에 있어요.</p>
+      <button id="introOkBtn" type="button" class="primary start">알겠어요</button>
+    </div>
+  </section>
+
+  <!-- 안내 -->
+  <section class="screen hidden" id="scrGuide">
+    <div class="card">
+      <h2>안내</h2>
+      <p class="note" style="margin-top:0">제목을 누르면 펼쳐져요.</p>
+      <details class="gd" open><summary>1. 하루 10분 순서</summary>
+        <ol>
+          <li>복습 2분: 한국어 뜻을 보고 영어로 말해요.</li>
+          <li>준비 1분: 문장 틀 3개와 오늘 집중 하나를 들어요.</li>
+          <li>대화: AI와 정한 시간만큼 영어로 이야기해요.</li>
+          <li>다시 말해 보기: 고친 문장을 말하면 AI가 맞게 말했는지 확인해요.</li>
+        </ol>
+      </details>
+      <details class="gd"><summary>2. 막히면 한국어로 말하기</summary>
+        <p>영어가 안 떠오르면 한국어로 말하세요. AI가 "You can say"로 영어 문장을 알려 줘요. 그 문장을 따라 말하면 대화가 이어져요.</p>
+      </details>
+      <details class="gd"><summary>3. 대화 중에는 다른 앱으로 가지 않기</summary>
+        <p>대화 중에 다른 앱이나 탭으로 넘어가면 대화가 바로 끝나요. 끝난 대화는 그때까지 말한 만큼만 분석해요.</p>
+      </details>
+      <details class="gd"><summary>4. 분석 배지 뜻</summary>
+        <p><span class="badge precise">정밀 분석</span><br>좋은 모델이 분석했어요. 확실한 교정은 "복습에 넣기"가 켜져 있어요.</p>
+        <p><span class="badge temp">임시 분석 (틀릴 수 있어요)</span><br>서버가 붐빌 때 쓰는 가벼운 모델이에요. 틀린 교정이 섞일 수 있어서 카드에 자동으로 넣지 않아요.</p>
+        <p>서버가 붐비면 녹음을 이 기기에 보관해요(최대 3건). 홈의 "지금 분석"으로 나중에 받아요.</p>
+      </details>
+      <details class="gd"><summary>5. 복습 규칙</summary>
+        <p>카드는 1일, 3일, 7일, 14일, 30일 뒤에 다시 나와요. 30일 복습까지 말하면 졸업이에요. "못 했어요"를 누르면 1일 뒤로 돌아가요.</p>
+        <p>두 번째 복습부터는 사람이나 때를 바꾼 문장(변형 문제)과 원래 문장이 번갈아 나와요. 이상한 카드는 "카드 지우기"로 지우세요.</p>
+      </details>
+      <details class="gd"><summary>6. 주제 규칙</summary>
+        <p>주제는 12개예요. 한 주제로 3번 대화하면 다음 주제로 넘어가요.</p>
+        <p>3번째 대화의 정밀 분석에서 오늘 집중 오류가 3개 이상이면 한 번 더 할지 물어봐요. 한 주제는 최대 5번까지 해요.</p>
+      </details>
+      <details class="gd" id="guidePromoBox"><summary>7. 진급 기준</summary>
+        <div id="guidePromo"></div>
+      </details>
+      <details class="gd"><summary>8. 한도</summary>
+        <p>대화는 횟수 제한이 없어요. 정밀 분석은 하루 약 20번, 다시 말하기 확인은 하루 약 500번까지 돼요. 한도는 구글이 바꿀 수 있어요.</p>
+        <div id="guideUsage" class="note"></div>
+      </details>
+      <details class="gd"><summary>9. 내 정보</summary>
+        <p>API 키, 기록, 녹음은 이 기기에만 저장해요.</p>
+        <p>목소리는 분석을 위해 구글 Gemini로 보내요. 무료 등급에서는 구글이 보낸 내용을 서비스 개선에 쓸 수 있어요(구글 약관 기준). 정확한 내용은 구글 약관을 확인해 주세요.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- 실력 확인 -->
+  <section class="screen hidden" id="scrCheck">
+    <div class="card">
+      <div id="ckBody"></div>
+      <audio id="ckAudio" controls class="hidden"></audio>
+    </div>
   </section>
 
   <!-- 준비 -->
@@ -257,6 +369,7 @@
       <div class="note" style="margin:0">준비 (1분)</div>
       <h2 id="prepTitle" class="ttl"></h2>
       <p id="prepGoal" class="goal"></p>
+      <div id="prepFocus"></div>
       <p class="note" style="margin:0 0 8px">문장 틀을 듣고 소리 내어 한 번씩 따라 말해 보세요.</p>
       <div id="prepFrames"></div>
       <p class="tip">막히면 한국어로 말하세요. AI가 영어 문장을 알려 줍니다.</p>
@@ -373,6 +486,7 @@
       <div class="note" style="margin:0" id="rvCount"></div>
       <div id="rvCardBox">
         <p class="note">이 뜻을 영어로 소리 내어 말해 보세요.</p>
+        <div id="rvVar" class="hidden"><span class="ftag">바꾼 문장</span> <span class="note">사람이나 때를 바꿨어요.</span></div>
         <div class="ko-big" id="rvFront"></div>
         <button id="rvShowBtn" type="button" class="primary start">정답 보기</button>
         <div id="rvBack" class="hidden">
@@ -384,6 +498,7 @@
             <button id="rvGoodBtn" type="button" class="primary big2">말했어요</button>
           </div>
         </div>
+        <button id="rvDelBtn" type="button" class="small" style="margin-top:16px">카드 지우기</button>
       </div>
       <div id="rvEnd" class="hidden"></div>
     </div>
@@ -395,6 +510,10 @@
       <h2>기록</h2>
       <div id="histSummary"></div>
       <button type="button" id="lastResultBtn" class="wide hidden" style="margin-top:10px">지난 결과 보기</button>
+    </div>
+    <div class="card">
+      <h2>실력 확인 기록</h2>
+      <div id="histChecks"></div>
     </div>
     <div class="card">
       <h2>자주 지적된 발음</h2>
@@ -441,7 +560,7 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.2.1 (2026-11-24)';
+const APP_VERSION = '0.3.0 (2026-11-24)';
 let LIMIT_MIN = 5;                       // 대화 시간(분). 화면에서 3, 5, 10 중에 고름
 function limitMs() { return (LIMIT_MIN >= 10 ? 9 : LIMIT_MIN) * 60000; }  // 10분은 연결 한도 때문에 9분에 마무리 시작
 function timeIsUp(s) { return performance.now() - s.startedAt >= limitMs(); }
@@ -491,93 +610,167 @@ const LEVEL_RULES = {
   }
 };
 // 순서: 현재형 -> 과거형 -> 미래/계획 -> 이유 말하기
-// 틀이 겨냥한 약점: 과거형, 주어 동사 일치(-s), 조각 문장, 문장 잇기(because, so, but)
+// focus: 그 주제에서 하루 하나만 집중할 문법 (아래 FOCUS)
+// vEn, vKo: 같은 문형에서 사람이나 때만 바꾼 변형 예문 (복습 카드의 변형 문제)
 const TOPICS = [
-  { ko: '자기소개와 가족', en: 'you and your family', goal: '나와 가족을 완전한 문장으로 소개하기', goalEn: 'introduce yourself and your family in full sentences (present simple, he/she + verb-s)',
+  { ko: '자기소개와 가족', en: 'you and your family', focus: 'agreement', goal: '나와 가족을 완전한 문장으로 소개하기', goalEn: 'introduce yourself and your family in full sentences (present simple, he/she + verb-s)',
     frames: [
-      { en: 'I live in ___ with ___.', ko: '나는 ___에서 ___와 함께 살아요', ex: 'I live in Seoul with my wife.', exKo: '나는 서울에서 아내와 함께 살아요.' },
-      { en: 'My ___ works at ___.', ko: '내 ___는 ___에서 일해요', ex: 'My brother works at a bank.', exKo: '내 남동생은 은행에서 일해요.' },
-      { en: 'There are ___ people in my family.', ko: '우리 가족은 ___명이에요', ex: 'There are four people in my family.', exKo: '우리 가족은 네 명이에요.' }
+      { en: 'I live in ___ with ___.', ko: '나는 ___에서 ___와 함께 살아요', ex: 'I live in Seoul with my wife.', exKo: '나는 서울에서 아내와 함께 살아요.', vEn: 'My sister lives in Busan with her husband.', vKo: '내 여동생은 남편과 함께 부산에서 살아요.' },
+      { en: 'My ___ works at ___.', ko: '내 ___는 ___에서 일해요', ex: 'My brother works at a bank.', exKo: '내 남동생은 은행에서 일해요.', vEn: 'My wife works at a hospital.', vKo: '내 아내는 병원에서 일해요.' },
+      { en: 'There are ___ people in my family.', ko: '우리 가족은 ___명이에요', ex: 'There are four people in my family.', exKo: '우리 가족은 네 명이에요.', vEn: "There are three people in my friend's family.", vKo: '내 친구네 가족은 세 명이에요.' }
     ],
     q: ['What is your name?', 'Where do you live?', 'Who do you live with?', 'How many people are in your family?', 'Tell me about one person in your family.', 'What does he or she do on weekends?'] },
-  { ko: '오늘 하루', en: 'your daily routine', goal: '하루 일과를 현재형으로 순서대로 말하기', goalEn: 'describe a normal day in order (present simple)',
+  { ko: '오늘 하루', en: 'your daily routine', focus: 'tense_present', goal: '하루 일과를 현재형으로 순서대로 말하기', goalEn: 'describe a normal day in order (present simple)',
     frames: [
-      { en: 'I usually get up at ___.', ko: '나는 보통 ___시에 일어나요', ex: 'I usually get up at seven.', exKo: '나는 보통 7시에 일어나요.' },
-      { en: 'After ___, I ___.', ko: '___ 후에 나는 ___해요', ex: 'After breakfast, I go to work.', exKo: '아침을 먹은 후에 나는 출근해요.' },
-      { en: 'In the evening, I ___ and ___.', ko: '저녁에 나는 ___하고 ___해요', ex: 'In the evening, I cook dinner and watch TV.', exKo: '저녁에 나는 저녁을 만들고 TV를 봐요.' }
+      { en: 'I usually get up at ___.', ko: '나는 보통 ___시에 일어나요', ex: 'I usually get up at seven.', exKo: '나는 보통 7시에 일어나요.', vEn: 'My son usually gets up at eight.', vKo: '내 아들은 보통 8시에 일어나요.' },
+      { en: 'After ___, I ___.', ko: '___ 후에 나는 ___해요', ex: 'After breakfast, I go to work.', exKo: '아침을 먹은 후에 나는 출근해요.', vEn: 'After lunch, my wife goes to the gym.', vKo: '점심을 먹은 후에 아내는 헬스장에 가요.' },
+      { en: 'In the evening, I ___ and ___.', ko: '저녁에 나는 ___하고 ___해요', ex: 'In the evening, I cook dinner and watch TV.', exKo: '저녁에 나는 저녁을 만들고 TV를 봐요.', vEn: 'In the evening, my husband washes the dishes and reads a book.', vKo: '저녁에 남편은 설거지를 하고 책을 읽어요.' }
     ],
     q: ['What time do you usually get up?', 'What do you do in the morning?', 'How do you go to work?', 'What do you do after lunch?', 'What do you do in the evening?', 'What time do you go to bed?'] },
-  { ko: '내 일(직장)', en: 'your work', goal: '내가 하는 일을 설명하고 but으로 이어 말하기', goalEn: 'explain your job and connect ideas with "but" (present simple)',
+  { ko: '내 일(직장)', en: 'your work', focus: 'connector', goal: '내가 하는 일을 설명하고 but으로 이어 말하기', goalEn: 'explain your job and connect ideas with "but" (present simple)',
     frames: [
-      { en: 'I work at ___ as a ___.', ko: '나는 ___에서 ___로 일해요', ex: 'I work at a small company as a designer.', exKo: '나는 작은 회사에서 디자이너로 일해요.' },
-      { en: 'Every day, I ___.', ko: '나는 매일 ___해요', ex: 'Every day, I answer a lot of emails.', exKo: '나는 매일 이메일에 많이 답장해요.' },
-      { en: 'My job is ___, but ___.', ko: '내 일은 ___하지만 ___해요', ex: 'My job is busy, but it is interesting.', exKo: '내 일은 바쁘지만 재미있어요.' }
+      { en: 'I work at ___ as a ___.', ko: '나는 ___에서 ___로 일해요', ex: 'I work at a small company as a designer.', exKo: '나는 작은 회사에서 디자이너로 일해요.', vEn: 'My friend works at a hospital as a nurse.', vKo: '내 친구는 병원에서 간호사로 일해요.' },
+      { en: 'Every day, I ___.', ko: '나는 매일 ___해요', ex: 'Every day, I answer a lot of emails.', exKo: '나는 매일 이메일에 많이 답장해요.', vEn: 'Every day, my boss has a lot of meetings.', vKo: '내 상사는 매일 회의가 많아요.' },
+      { en: 'My job is ___, but ___.', ko: '내 일은 ___하지만 ___해요', ex: 'My job is busy, but it is interesting.', exKo: '내 일은 바쁘지만 재미있어요.', vEn: "My sister's job is hard, but she likes it.", vKo: '여동생의 일은 힘들지만 여동생은 그 일을 좋아해요.' }
     ],
     q: ['What do you do for work?', 'Where do you work?', 'What time do you start work?', 'What do you do every day at work?', 'Is your job busy or easy?', 'What do you like about your job?'] },
-  { ko: '집과 동네', en: 'your home and neighborhood', goal: '우리 집과 동네를 there is, has로 설명하기', goalEn: 'describe your home and neighborhood with "there is / there are" and "has"',
+  { ko: '집과 동네', en: 'your home and neighborhood', focus: 'agreement', goal: '우리 집과 동네를 there is, has로 설명하기', goalEn: 'describe your home and neighborhood with "there is / there are" and "has"',
     frames: [
-      { en: 'There is a ___ near my home.', ko: '우리 집 근처에 ___가 있어요', ex: 'There is a big park near my home.', exKo: '우리 집 근처에 큰 공원이 있어요.' },
-      { en: 'My home has ___.', ko: '우리 집에는 ___가 있어요', ex: 'My home has three rooms.', exKo: '우리 집에는 방이 세 개 있어요.' },
-      { en: 'I like my neighborhood because it is ___.', ko: '우리 동네는 ___해서 좋아요', ex: 'I like my neighborhood because it is quiet.', exKo: '우리 동네는 조용해서 좋아요.' }
+      { en: 'There is a ___ near my home.', ko: '우리 집 근처에 ___가 있어요', ex: 'There is a big park near my home.', exKo: '우리 집 근처에 큰 공원이 있어요.', vEn: 'There is a small cafe near my office.', vKo: '우리 회사 근처에 작은 카페가 있어요.' },
+      { en: 'My home has ___.', ko: '우리 집에는 ___가 있어요', ex: 'My home has three rooms.', exKo: '우리 집에는 방이 세 개 있어요.', vEn: "My parents' home has a big kitchen.", vKo: '부모님 댁에는 큰 부엌이 있어요.' },
+      { en: 'I like my neighborhood because it is ___.', ko: '우리 동네는 ___해서 좋아요', ex: 'I like my neighborhood because it is quiet.', exKo: '우리 동네는 조용해서 좋아요.', vEn: 'My wife likes our neighborhood because it is safe.', vKo: '아내는 우리 동네가 안전해서 좋아해요.' }
     ],
     q: ['Do you live in a house or an apartment?', 'How many rooms does your home have?', 'What is your favorite room?', 'What is near your home?', 'Is your neighborhood quiet or busy?', 'What do you like about your neighborhood?'] },
-  { ko: '음식과 식사', en: 'food and meals', goal: '좋아하는 음식과 싫어하는 이유 말하기', goalEn: 'talk about what you eat, what you like, and what you do not like and why',
+  { ko: '음식과 식사', en: 'food and meals', focus: 'agreement', goal: '좋아하는 음식과 싫어하는 이유 말하기', goalEn: 'talk about what you eat, what you like, and what you do not like and why',
     frames: [
-      { en: 'For ___, I usually eat ___.', ko: '___으로 나는 보통 ___를 먹어요', ex: 'For lunch, I usually eat kimbap.', exKo: '점심으로 나는 보통 김밥을 먹어요.' },
-      { en: 'My favorite food is ___.', ko: '내가 제일 좋아하는 음식은 ___예요', ex: 'My favorite food is kimchi stew.', exKo: '내가 제일 좋아하는 음식은 김치찌개예요.' },
-      { en: "I don't like ___ because it is too ___.", ko: '___는 너무 ___해서 안 좋아해요', ex: "I don't like coffee because it is too bitter.", exKo: '커피는 너무 써서 안 좋아해요.' }
+      { en: 'For ___, I usually eat ___.', ko: '___으로 나는 보통 ___를 먹어요', ex: 'For lunch, I usually eat kimbap.', exKo: '점심으로 나는 보통 김밥을 먹어요.', vEn: 'For breakfast, my daughter usually eats bread.', vKo: '아침으로 내 딸은 보통 빵을 먹어요.' },
+      { en: 'My favorite food is ___.', ko: '내가 제일 좋아하는 음식은 ___예요', ex: 'My favorite food is kimchi stew.', exKo: '내가 제일 좋아하는 음식은 김치찌개예요.', vEn: "My husband's favorite food is fried chicken.", vKo: '남편이 제일 좋아하는 음식은 치킨이에요.' },
+      { en: "I don't like ___ because it is too ___.", ko: '___는 너무 ___해서 안 좋아해요', ex: "I don't like coffee because it is too bitter.", exKo: '커피는 너무 써서 안 좋아해요.', vEn: "My son doesn't like kimchi because it is too spicy.", vKo: '내 아들은 김치가 너무 매워서 안 좋아해요.' }
     ],
     q: ['What do you usually eat for breakfast?', 'What is your favorite food?', 'Do you cook at home?', 'Who usually cooks dinner in your home?', 'Is there any food you do not like?', 'What did you eat for lunch today?'] },
-  { ko: '어제 한 일', en: 'what you did yesterday', goal: '어제 한 일을 과거형으로 말하기', goalEn: 'talk about yesterday using the past simple (went, had, was)',
+  { ko: '어제 한 일', en: 'what you did yesterday', focus: 'tense_past', goal: '어제 한 일을 과거형으로 말하기', goalEn: 'talk about yesterday using the past simple (went, had, was)',
     frames: [
-      { en: 'I went to ___.', ko: '나는 ___에 갔어요', ex: 'I went to a skin clinic.', exKo: '나는 피부과에 갔어요.' },
-      { en: 'After that, I ___.', ko: '그 다음에 나는 ___했어요', ex: 'After that, I had lunch with my friend.', exKo: '그 다음에 나는 친구와 점심을 먹었어요.' },
-      { en: 'I was ___, so I ___.', ko: '나는 ___해서 ___했어요', ex: 'I was tired, so I went to bed early.', exKo: '나는 피곤해서 일찍 잤어요.' }
+      { en: 'I went to ___.', ko: '나는 ___에 갔어요', ex: 'I went to a skin clinic.', exKo: '나는 피부과에 갔어요.', vEn: 'My wife went to the hospital last week.', vKo: '아내는 지난주에 병원에 갔어요.' },
+      { en: 'After that, I ___.', ko: '그 다음에 나는 ___했어요', ex: 'After that, I had lunch with my friend.', exKo: '그 다음에 나는 친구와 점심을 먹었어요.', vEn: 'After that, my brother had dinner with his boss.', vKo: '그 다음에 남동생은 상사와 저녁을 먹었어요.' },
+      { en: 'I was ___, so I ___.', ko: '나는 ___해서 ___했어요', ex: 'I was tired, so I went to bed early.', exKo: '나는 피곤해서 일찍 잤어요.', vEn: 'My son was hungry, so he ate some bread.', vKo: '아들은 배가 고파서 빵을 좀 먹었어요.' }
     ],
     q: ['What did you do yesterday?', 'Where did you go?', 'Who did you meet?', 'What did you eat?', 'How did you feel?', 'What time did you go to bed?'] },
-  { ko: '쇼핑', en: 'shopping', goal: '최근에 산 물건을 과거형으로 말하기', goalEn: 'talk about something you bought, using the past simple and "because"',
+  { ko: '쇼핑', en: 'shopping', focus: 'tense_past', goal: '최근에 산 물건을 과거형으로 말하기', goalEn: 'talk about something you bought, using the past simple and "because"',
     frames: [
-      { en: 'I bought ___ at ___.', ko: '나는 ___를 ___에서 샀어요', ex: 'I bought a jacket at the mall.', exKo: '나는 쇼핑몰에서 재킷을 샀어요.' },
-      { en: 'It cost ___ won.', ko: '___원이었어요', ex: 'It cost fifty thousand won.', exKo: '5만 원이었어요.' },
-      { en: 'I bought it because ___.', ko: '___해서 그걸 샀어요', ex: 'I bought it because it was on sale.', exKo: '세일 중이어서 그걸 샀어요.' }
+      { en: 'I bought ___ at ___.', ko: '나는 ___를 ___에서 샀어요', ex: 'I bought a jacket at the mall.', exKo: '나는 쇼핑몰에서 재킷을 샀어요.', vEn: 'My mother bought some apples at the market yesterday.', vKo: '어머니는 어제 시장에서 사과를 좀 샀어요.' },
+      { en: 'It cost ___ won.', ko: '___원이었어요', ex: 'It cost fifty thousand won.', exKo: '5만 원이었어요.', vEn: 'The shoes cost eighty thousand won last month.', vKo: '그 신발은 지난달에 8만 원이었어요.' },
+      { en: 'I bought it because ___.', ko: '___해서 그걸 샀어요', ex: 'I bought it because it was on sale.', exKo: '세일 중이어서 그걸 샀어요.', vEn: 'My wife bought it because it was cheap.', vKo: '아내는 그게 싸서 샀어요.' }
     ],
     q: ['Where do you usually go shopping?', 'Do you like shopping online?', 'What did you buy last?', 'Where did you buy it?', 'How much was it?', 'Why did you buy it?'] },
-  { ko: '건강과 병원', en: 'health and going to the doctor', goal: '아팠던 일과 병원에 간 일을 과거형으로 말하기', goalEn: 'talk about being sick and seeing a doctor (past simple + because)',
+  { ko: '건강과 병원', en: 'health and going to the doctor', focus: 'tense_past', goal: '아팠던 일과 병원에 간 일을 과거형으로 말하기', goalEn: 'talk about being sick and seeing a doctor (past simple + because)',
     frames: [
-      { en: 'I had a ___.', ko: '나는 ___가 있었어요 (아팠어요)', ex: 'I had a headache last night.', exKo: '어젯밤에 머리가 아팠어요.' },
-      { en: 'I went to the ___ because ___.', ko: '___해서 ___에 갔어요', ex: 'I went to the hospital because my back hurt.', exKo: '허리가 아파서 병원에 갔어요.' },
-      { en: 'To stay healthy, I ___.', ko: '건강을 위해 나는 ___해요', ex: 'To stay healthy, I walk every day.', exKo: '건강을 위해 나는 매일 걸어요.' }
+      { en: 'I had a ___.', ko: '나는 ___가 있었어요 (아팠어요)', ex: 'I had a headache last night.', exKo: '어젯밤에 머리가 아팠어요.', vEn: 'My daughter had a fever yesterday.', vKo: '내 딸은 어제 열이 났어요.' },
+      { en: 'I went to the ___ because ___.', ko: '___해서 ___에 갔어요', ex: 'I went to the hospital because my back hurt.', exKo: '허리가 아파서 병원에 갔어요.', vEn: 'My father went to the dentist because his tooth hurt.', vKo: '아버지는 이가 아파서 치과에 갔어요.' },
+      { en: 'To stay healthy, I ___.', ko: '건강을 위해 나는 ___해요', ex: 'To stay healthy, I walk every day.', exKo: '건강을 위해 나는 매일 걸어요.', vEn: 'To stay healthy, my mother swims every morning.', vKo: '건강을 위해 어머니는 매일 아침 수영을 해요.' }
     ],
     q: ['How are you feeling today?', 'When were you sick last time?', 'What was wrong?', 'Did you go to the hospital?', 'What did the doctor say?', 'What do you do to stay healthy?'] },
-  { ko: '주말 계획', en: 'your weekend plans', goal: '주말 계획을 be going to로 말하기', goalEn: 'talk about plans using "be going to" and "will"',
+  { ko: '주말 계획', en: 'your weekend plans', focus: 'future', goal: '주말 계획을 be going to로 말하기', goalEn: 'talk about plans using "be going to" and "will"',
     frames: [
-      { en: "This weekend, I'm going to ___.", ko: '이번 주말에 나는 ___할 거예요', ex: "This weekend, I'm going to visit my parents.", exKo: '이번 주말에 나는 부모님 댁에 갈 거예요.' },
-      { en: "After that, we're going to ___.", ko: '그 다음에 우리는 ___할 거예요', ex: "After that, we're going to watch a movie.", exKo: '그 다음에 우리는 영화를 볼 거예요.' },
-      { en: 'If it rains, I will ___.', ko: '비가 오면 나는 ___할 거예요', ex: 'If it rains, I will stay home.', exKo: '비가 오면 나는 집에 있을 거예요.' }
+      { en: "This weekend, I'm going to ___.", ko: '이번 주말에 나는 ___할 거예요', ex: "This weekend, I'm going to visit my parents.", exKo: '이번 주말에 나는 부모님 댁에 갈 거예요.', vEn: 'Next Saturday, my wife is going to meet her friends.', vKo: '다음 주 토요일에 아내는 친구들을 만날 거예요.' },
+      { en: "After that, we're going to ___.", ko: '그 다음에 우리는 ___할 거예요', ex: "After that, we're going to watch a movie.", exKo: '그 다음에 우리는 영화를 볼 거예요.', vEn: "After that, they're going to have dinner together.", vKo: '그 다음에 그 사람들은 함께 저녁을 먹을 거예요.' },
+      { en: 'If it rains, I will ___.', ko: '비가 오면 나는 ___할 거예요', ex: 'If it rains, I will stay home.', exKo: '비가 오면 나는 집에 있을 거예요.', vEn: 'If it snows, my son will build a snowman.', vKo: '눈이 오면 아들은 눈사람을 만들 거예요.' }
     ],
     q: ['What are you going to do this weekend?', 'Who are you going to meet?', 'Where are you going to go?', 'What are you going to eat?', 'What will you do if it rains?', 'What did you do last weekend?'] },
-  { ko: '날씨와 계절', en: 'the weather and seasons', goal: '날씨를 말하고 so로 할 일을 이어 말하기', goalEn: 'describe the weather and connect it to plans with "so" and "because"',
+  { ko: '날씨와 계절', en: 'the weather and seasons', focus: 'connector', goal: '날씨를 말하고 so로 할 일을 이어 말하기', goalEn: 'describe the weather and connect it to plans with "so" and "because"',
     frames: [
-      { en: 'It is ___ today.', ko: '오늘은 ___해요', ex: 'It is cold and windy today.', exKo: '오늘은 춥고 바람이 불어요.' },
-      { en: "It's going to ___ tomorrow, so I will ___.", ko: '내일 ___할 거라서 나는 ___할 거예요', ex: "It's going to rain tomorrow, so I will take an umbrella.", exKo: '내일 비가 온대서 나는 우산을 가져갈 거예요.' },
-      { en: 'My favorite season is ___ because ___.', ko: '내가 제일 좋아하는 계절은 ___예요. ___하거든요', ex: 'My favorite season is fall because it is cool.', exKo: '내가 제일 좋아하는 계절은 가을이에요. 선선하거든요.' }
+      { en: 'It is ___ today.', ko: '오늘은 ___해요', ex: 'It is cold and windy today.', exKo: '오늘은 춥고 바람이 불어요.', vEn: 'It was hot and sunny yesterday.', vKo: '어제는 덥고 화창했어요.' },
+      { en: "It's going to ___ tomorrow, so I will ___.", ko: '내일 ___할 거라서 나는 ___할 거예요', ex: "It's going to rain tomorrow, so I will take an umbrella.", exKo: '내일 비가 온대서 나는 우산을 가져갈 거예요.', vEn: "It's going to snow tonight, so my husband will drive slowly.", vKo: '오늘 밤 눈이 온대서 남편은 천천히 운전할 거예요.' },
+      { en: 'My favorite season is ___ because ___.', ko: '내가 제일 좋아하는 계절은 ___예요. ___하거든요', ex: 'My favorite season is fall because it is cool.', exKo: '내가 제일 좋아하는 계절은 가을이에요. 선선하거든요.', vEn: "My wife's favorite season is spring because the flowers are beautiful.", vKo: '아내가 제일 좋아하는 계절은 봄이에요. 꽃이 예쁘거든요.' }
     ],
     q: ['How is the weather today?', 'What will the weather be like tomorrow?', 'What do you do when it rains?', 'What is your favorite season?', 'Why do you like it?', 'What do you usually do in summer?'] },
-  { ko: '취미와 쉬는 시간', en: 'your hobbies and free time', goal: '취미를 말하고 because로 이유 붙이기', goalEn: 'talk about hobbies and give reasons with "because"',
+  { ko: '취미와 쉬는 시간', en: 'your hobbies and free time', focus: 'connector', goal: '취미를 말하고 because로 이유 붙이기', goalEn: 'talk about hobbies and give reasons with "because"',
     frames: [
-      { en: 'In my free time, I like to ___.', ko: '쉬는 시간에 나는 ___하는 걸 좋아해요', ex: 'In my free time, I like to watch movies.', exKo: '쉬는 시간에 나는 영화 보는 걸 좋아해요.' },
-      { en: 'I like it because ___.', ko: '___해서 그걸 좋아해요', ex: 'I like it because it helps me relax.', exKo: '마음이 편해져서 그걸 좋아해요.' },
-      { en: 'I started ___ when I was ___.', ko: '나는 ___살 때 ___를 시작했어요', ex: 'I started playing golf when I was thirty.', exKo: '나는 서른 살 때 골프를 시작했어요.' }
+      { en: 'In my free time, I like to ___.', ko: '쉬는 시간에 나는 ___하는 걸 좋아해요', ex: 'In my free time, I like to watch movies.', exKo: '쉬는 시간에 나는 영화 보는 걸 좋아해요.', vEn: 'In her free time, my sister likes to bake cookies.', vKo: '쉬는 시간에 여동생은 쿠키 굽는 걸 좋아해요.' },
+      { en: 'I like it because ___.', ko: '___해서 그걸 좋아해요', ex: 'I like it because it helps me relax.', exKo: '마음이 편해져서 그걸 좋아해요.', vEn: 'My husband likes it because it makes him happy.', vKo: '남편은 그걸 하면 행복해져서 좋아해요.' },
+      { en: 'I started ___ when I was ___.', ko: '나는 ___살 때 ___를 시작했어요', ex: 'I started playing golf when I was thirty.', exKo: '나는 서른 살 때 골프를 시작했어요.', vEn: 'My father started swimming when he was fifty.', vKo: '아버지는 쉰 살 때 수영을 시작했어요.' }
     ],
     q: ['What do you do in your free time?', 'Why do you like it?', 'When did you start it?', 'Who do you do it with?', 'How often do you do it?', 'What new hobby do you want to try, and why?'] },
-  { ko: '여행 경험', en: 'travel', goal: '여행 경험을 과거형으로 말하고 이유 붙이기', goalEn: 'talk about a past trip and give reasons (past simple + because)',
+  { ko: '여행 경험', en: 'travel', focus: 'tense_past', goal: '여행 경험을 과거형으로 말하고 이유 붙이기', goalEn: 'talk about a past trip and give reasons (past simple + because)',
     frames: [
-      { en: 'I went to ___ last ___.', ko: '나는 지난 ___에 ___에 갔어요', ex: 'I went to Jeju Island last year.', exKo: '나는 작년에 제주도에 갔어요.' },
-      { en: 'The best part was ___ because ___.', ko: '제일 좋았던 건 ___였어요. ___했거든요', ex: 'The best part was the food because it was fresh.', exKo: '제일 좋았던 건 음식이었어요. 신선했거든요.' },
-      { en: 'Next time, I want to go to ___ because ___.', ko: '다음에는 ___에 가고 싶어요. ___하거든요', ex: 'Next time, I want to go to Japan because I love ramen.', exKo: '다음에는 일본에 가고 싶어요. 라멘을 좋아하거든요.' }
+      { en: 'I went to ___ last ___.', ko: '나는 지난 ___에 ___에 갔어요', ex: 'I went to Jeju Island last year.', exKo: '나는 작년에 제주도에 갔어요.', vEn: 'My parents went to Vietnam last month.', vKo: '부모님은 지난달에 베트남에 갔어요.' },
+      { en: 'The best part was ___ because ___.', ko: '제일 좋았던 건 ___였어요. ___했거든요', ex: 'The best part was the food because it was fresh.', exKo: '제일 좋았던 건 음식이었어요. 신선했거든요.', vEn: 'The best part was the beach because it was beautiful.', vKo: '제일 좋았던 건 바다였어요. 아름다웠거든요.' },
+      { en: 'Next time, I want to go to ___ because ___.', ko: '다음에는 ___에 가고 싶어요. ___하거든요', ex: 'Next time, I want to go to Japan because I love ramen.', exKo: '다음에는 일본에 가고 싶어요. 라멘을 좋아하거든요.', vEn: 'Next year, my wife wants to go to Italy because she loves pasta.', vKo: '내년에 아내는 이탈리아에 가고 싶어 해요. 파스타를 좋아하거든요.' }
     ],
     q: ['Do you like traveling?', 'Where did you go on your last trip?', 'Who did you go with?', 'What did you do there?', 'What was the best part, and why?', 'Where do you want to go next?'] }
 ];
+
+// 하루 약점 하나 (0.3.0). gtypes = 분석 결과 grammar.type 중 이 집중에 해당하는 것
+const FOCUS = {
+  tense_present: {
+    ko: '매일 하는 일은 현재형', l1: '매일, 보통 하는 일은 동사 원래 모양으로 말해요.', l2: '지금 하는 중인 일에만 -ing를 붙여요.',
+    bad: 'I am get up at seven every day.', good: 'I get up at seven every day.',
+    en: 'present simple for habits and routines (I get up, I work), not "am + verb" and not past forms',
+    ask: 'ask about habits and routines, for example "What do you usually...?" and "How often do you...?".',
+    recast: 'Oh, you get up at seven every day. What do you do next?', gtypes: ['tense']
+  },
+  agreement: {
+    ko: '한 사람 이야기는 동사에 -s', l1: 'he, she, my wife처럼 한 사람이 주어면 동사에 -s를 붙여요.', l2: 'I, you, we, they 뒤에는 붙이지 않아요.',
+    bad: 'My wife work at a bank.', good: 'My wife works at a bank.',
+    en: 'subject-verb agreement (he, she, my wife + verb-s; is or are)',
+    ask: 'often ask about other people (your wife, your friend, your brother) so the learner must use he or she + verb-s.',
+    recast: 'Oh, your wife works at a bank. What does she do there?', gtypes: ['agreement']
+  },
+  tense_past: {
+    ko: '지난 일은 과거형', l1: '어제, 지난주에 한 일은 동사를 과거형으로 바꿔요.', l2: 'go는 went, have는 had, is는 was가 돼요.',
+    bad: 'I go to hospital yesterday.', good: 'I went to the hospital yesterday.',
+    en: 'past simple for finished past events (went, had, was)',
+    ask: 'ask about finished past events (yesterday, last weekend, last year) with "did" questions, for example "What did you do...?".',
+    recast: 'Oh, you went to the hospital yesterday. Why did you go?', gtypes: ['tense']
+  },
+  future: {
+    ko: '계획은 going to', l1: '앞으로 할 일은 be going to나 will로 말해요.', l2: "I'm, we're처럼 be동사를 빼먹지 마세요.",
+    bad: 'This weekend I going to visit my parents.', good: "This weekend, I'm going to visit my parents.",
+    en: 'future plans with "be going to" and "will"',
+    ask: 'ask about plans, for example "What are you going to...?" and "What will you do if...?".',
+    recast: "Oh, you're going to visit your parents. What are you going to do there?", gtypes: ['tense']
+  },
+  connector: {
+    ko: '짧은 말을 이어서 한 문장으로', l1: '두세 단어로 끊지 말고 because, so, but으로 이어요.', l2: '이유는 because, 결과는 so, 반대는 but이에요.',
+    bad: 'Busy. But interesting.', good: 'My job is busy, but it is interesting.',
+    en: 'joining ideas into one full sentence with because, so, and but (no short fragments)',
+    ask: 'often ask "Why?" and "What happened next?" so the learner must use because, so, and but. When the learner answers with a short fragment, recast it as one full sentence joined with because, so, or but.',
+    recast: 'Oh, your job is busy, but it is interesting. Why is it interesting?', gtypes: ['connector', 'fragment']
+  }
+};
+const GTYPES = ['tense', 'agreement', 'fragment', 'connector', 'word_choice', 'article_preposition', 'other'];
+function topicFocus(idx) { const t = TOPICS[idx]; return t && FOCUS[t.focus] ? t.focus : 'tense_past'; }
+
+// 실력 확인 질문 (3벌, 같은 난이도): 현재 일상 / 지난 일 / 계획 / 이유 / 자세히
+const CHECK_SETS = [
+  [
+    { en: 'What do you usually do on weekday mornings?', ko: '평일 아침에 보통 뭐 해요?' },
+    { en: 'What did you do last weekend?', ko: '지난 주말에 뭐 했어요?' },
+    { en: 'What are you going to do this weekend?', ko: '이번 주말에 뭐 할 거예요?' },
+    { en: 'What is your favorite season, and why?', ko: '제일 좋아하는 계절은 뭐예요? 왜요?' },
+    { en: 'Tell me more about last weekend. Who were you with, and how did you feel?', ko: '지난 주말 이야기를 더 해 주세요. 누구와 있었고, 기분이 어땠어요?' }
+  ],
+  [
+    { en: 'What do you usually do after dinner?', ko: '저녁을 먹고 보통 뭐 해요?' },
+    { en: 'What did you do yesterday?', ko: '어제 뭐 했어요?' },
+    { en: 'What are you going to do tomorrow evening?', ko: '내일 저녁에 뭐 할 거예요?' },
+    { en: 'What food do you like best, and why?', ko: '어떤 음식을 제일 좋아해요? 왜요?' },
+    { en: 'Tell me more about yesterday. Where did you go, and what was the best part?', ko: '어제 이야기를 더 해 주세요. 어디에 갔고, 제일 좋았던 건 뭐예요?' }
+  ],
+  [
+    { en: 'How do you usually spend your Sunday?', ko: '일요일은 보통 어떻게 보내요?' },
+    { en: 'What did you do last night?', ko: '어젯밤에 뭐 했어요?' },
+    { en: 'What are you going to do on your next day off?', ko: '다음 쉬는 날에 뭐 할 거예요?' },
+    { en: 'Do you like the city or the countryside more? Why?', ko: '도시와 시골 중에 어디가 더 좋아요? 왜요?' },
+    { en: 'Tell me more about last night. Who were you with, and what did you talk about?', ko: '어젯밤 이야기를 더 해 주세요. 누구와 있었고, 무슨 이야기를 했어요?' }
+  ]
+];
+// 진급 기준 (앱 내부 잠정 기준). all = 과거, 계획, 이유 모두 필요
+const PROMO = {
+  A1: { to: 'A2', toKo: '초급', sec: 40, conn: 1, onTopic: 3, acc: 0.6, all: false },
+  A2: { to: 'B1', toKo: '중급', sec: 100, conn: 4, onTopic: 4, acc: 0.8, all: true }
+};
+const MAX_TRIES = 5;                      // 한 주제 최대 대화 횟수 (한 번 더 포함)
+const FOCUS_HOLD = 3;                     // 3번째 대화의 집중 오류가 이만큼이면 한 번 더 제안
 const PER_TOPIC = 3;                      // 한 주제당 대화 횟수
 let D = null;                             // 학습 기록 (ec_data_v1)
 
@@ -589,6 +782,7 @@ const tutorPrompt = () => {
   const L = LEVEL_RULES[levelCode()];
   const t = curTopic();
   const n = lessonAttempt();
+  const F = FOCUS[t.focus] || FOCUS.tense_past;
   return [
     'You are a friendly English conversation tutor.',
     'The learner is Korean, ' + L.who + '.',
@@ -596,7 +790,9 @@ const tutorPrompt = () => {
     'RESCUE RULE: when the learner says something in Korean, or gets stuck and mixes Korean words in, they need help. Then do exactly this: say "You can say:" and give the natural English sentence for what they meant, slowly, in simple words (10 words or fewer). Then say "Try it." and wait. After they repeat it, say "Good!" and continue with the next question. A rescue does not count as one of the answers.',
     L.speed,
     L.ask,
-    'Do NOT explain grammar and do NOT point out mistakes. Only RECAST: when the learner says something incorrectly, repeat their idea back ONCE in the correct form, naturally, as your short reaction, then ask your next question. Example: Learner: "I go to hospital yesterday." You: "Oh, you went to the hospital yesterday. Why did you go?"',
+    'TODAY\'S FOCUS GRAMMAR: ' + F.en + '.',
+    'Do NOT explain grammar and do NOT point out mistakes. RECAST ONLY mistakes of today\'s focus grammar: when the learner makes one, repeat their idea back ONCE in the correct form, naturally, as your short reaction, then ask your next question. Example: Learner: "' + F.bad + '" You: "' + F.recast + '" Ignore every other kind of mistake: do not recast it, just react to the meaning and continue.',
+    'Ask questions that make the learner use today\'s focus grammar: ' + F.ask,
     'If the learner answers with only one or two words, ask them ONCE to say it in a full sentence, for example "Can you say it in a full sentence?" Do not ask this again for the same question; accept the answer and move on.',
     'Keep every reply under 20 words. You are only a conversation partner: never give advice, warnings, or disclaimers.',
     'If you could not understand the learner, say so in a few words and ask them to say it again.',
@@ -610,7 +806,7 @@ const tutorPrompt = () => {
     ...t.frames.map(f => '- ' + f.en + ' (example: ' + f.ex + ')'),
     n <= 1
       ? 'This is the learner\'s FIRST conversation on this topic. Ask the questions roughly in the order above.'
-      : 'This is conversation number ' + n + ' of ' + PER_TOPIC + ' on this topic. The learner has answered these questions before. Ask them in a DIFFERENT order from the list, and ask one or two extra follow-up questions about details (who, where, when, why, how).',
+      : 'This is conversation number ' + n + ' on this topic. The learner has answered these questions before. Ask them in a DIFFERENT order from the list, and ask one or two extra follow-up questions about details (who, where, when, why, how).',
     '',
     'Start by greeting the learner in one short sentence and asking your first question about today\'s topic.',
     'Keep the conversation going: until you are told that time is up, always end your reply with one question. You will receive a text message when time is up. Only then say ONE short goodbye sentence and stop asking questions.'
@@ -1418,7 +1614,7 @@ async function sendTurn(s) {
     '1) "heard": write exactly what the learner said, word for word, in English letters. Do NOT fix grammar or pronunciation. If you cannot hear speech, write "".',
     isLast
       ? '2) "reply": this was the learner\'s final answer. React in a few words and say ONE short goodbye sentence. Do NOT ask a question.'
-      : '2) "reply": react briefly in a few words, then ask ONE short follow-up question (' + LEVEL_RULES[levelCode()].qWords + ' words or fewer). Do not explain mistakes; if the learner made one, just recast it once in the correct form inside your reaction.'
+      : '2) "reply": react briefly in a few words, then ask ONE short follow-up question (' + LEVEL_RULES[levelCode()].qWords + ' words or fewer). Do not explain mistakes; if the learner made a mistake of today\'s focus grammar, just recast it once in the correct form inside your reaction, and ignore other kinds of mistakes.'
   ].join('\n');
   const body = {
     model: TURN_MODEL,
@@ -1602,50 +1798,47 @@ async function finishConversation(reason) {
     return;
   }
   setStatus('분석 중');
-  lastAnalysisInput = { pcm, transcript, meta };
-  idbSet('lastInput', lastAnalysisInput);
+  // 0.3.0: 분석 전에 대기열에 먼저 보관한다 (분석 중 앱이 닫혀도 녹음이 남게)
+  const qid = meta.date;
+  await qAdd({ id: qid, kind: 'talk', state: 'pending', created: meta.date, topicIdx: meta.lesson.topicIdx }, { pcm, transcript, meta });
   const t = performance.now();
-  let analysis = null, analysisModel = null, note = '';
+  let analysis = null, analysisModel = null, grade = null, note = '';
   try {
-    const r = await analyze(pcm, transcript);
-    analysis = r.json; analysisModel = r.model;
+    const r = await analyzeTalk(pcm, transcript, meta, 'precise', setStatus);
+    analysis = r.json; analysisModel = r.model; grade = r.grade;
+    qRemove(qid);
   } catch (e) {
     log('분석 실패: ' + e.message, 'ERR');
-    note = '분석에 실패했습니다 (' + e.message + ').';
+    note = failNote(e);
   }
   const analysisMs = Math.round(performance.now() - t);
   S = null;
-  showResult({ meta, transcript, analysis, analysisMs, analysisModel, note });
+  showResult({ meta, transcript, analysis, analysisMs, analysisModel, grade, note });
 }
 
-async function analyze(pcm, transcript) {
-  const wav = encodeWav(pcm, TARGET_RATE);
-  log('분석용 WAV ' + (wav.length / 1024 / 1024).toFixed(2) + 'MB, ' + (pcm.length / TARGET_RATE).toFixed(1) + '초');
-  const convo = transcript.map(x => (x.role === 'ai' ? 'Tutor: ' : 'Learner (speech recognition, may be wrong): ') + x.text).join('\n');
-  const prompt = [
-    'You are an English speaking coach for a Korean learner at CEFR A2 level.',
-    'The attached audio contains the learner\'s voice from a short conversation. Silence or a faint tutor voice may also be present; judge only the learner.',
-    'The transcript below came from automatic speech recognition and may contain recognition errors. When the transcript and the audio disagree, trust the audio.',
-    '',
-    'Transcript:',
-    convo,
-    '',
-    'Return JSON with:',
-    '- "grammar": at most 4 items, using the learner\'s real sentences. Include ONLY sentences that have a real grammar or word-choice error; never list a sentence that is already correct, and do not treat contractions as errors. "said" = what the learner said, "corrected" = a natural corrected sentence, "reason_ko" = one short reason in Korean, "meaning_ko" = the natural Korean meaning of the corrected sentence (one short sentence, polite style). Return an empty list if there are no errors.',
-    '- "pronunciation": at most 5 items. Report ONLY words you clearly heard mispronounced in THIS audio. Do NOT flag words that sounded fine. Do NOT guess based on mistakes Korean learners commonly make. If you are not sure, leave it out. An empty list is fine. "word" = the English word, "heard_as_ko" = how it actually sounded (in Korean, you may quote the sound), "fix_ko" = how to fix it with mouth or tongue tips (in Korean).',
-    '- "good_point_ko": one sentence in Korean about something specific the learner did well.',
-    'Korean writing rules: short sentences, polite style, no emoji, no em dash, no middle dot.'
-  ].join('\n');
-  const schema = {
-    type: 'object',
-    properties: {
-      grammar: { type: 'array', items: { type: 'object', properties: { said: { type: 'string' }, corrected: { type: 'string' }, reason_ko: { type: 'string' }, meaning_ko: { type: 'string' } }, required: ['said', 'corrected', 'reason_ko', 'meaning_ko'] } },
-      pronunciation: { type: 'array', items: { type: 'object', properties: { word: { type: 'string' }, heard_as_ko: { type: 'string' }, fix_ko: { type: 'string' } }, required: ['word', 'heard_as_ko', 'fix_ko'] } },
-      good_point_ko: { type: 'string' }
-    },
-    required: ['grammar', 'pronunciation', 'good_point_ko']
-  };
-  const mk = (model, level) => ({
+/* ---- 분석 모델 등급과 순서 (0.3.0) ---- */
+const PRECISE_MODELS = [ANALYSIS_MODEL, 'gemini-3.8-flash'];
+const TEMP_MODELS = [ANALYSIS_FALLBACK_MODEL, 'gemini-3.1-flash-lite'];
+const VERIFY_MODEL = 'gemini-3.5-flash-lite';
+// 정밀: hydrogen -> 5초 뒤 hydrogen -> 3.8-flash -> 15초 뒤 3.8-flash. 임시: flash-lite 2개
+const PRECISE_CHAIN = [
+  { model: ANALYSIS_MODEL, level: 'low', ms: 45000, wait: 0 },
+  { model: ANALYSIS_MODEL, level: 'low', ms: 45000, wait: 5000 },
+  { model: 'gemini-3.8-flash', level: null, ms: 45000, wait: 0 },
+  { model: 'gemini-3.8-flash', level: null, ms: 45000, wait: 15000 }
+];
+const TEMP_CHAIN = [
+  { model: ANALYSIS_FALLBACK_MODEL, level: 'minimal', ms: 60000, wait: 0 },
+  { model: 'gemini-3.1-flash-lite', level: null, ms: 60000, wait: 0 }
+];
+function gradeOf(model) { return !model ? null : PRECISE_MODELS.includes(model) ? 'precise' : 'temp'; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function failNote(e) {
+  if (e && (e.status === 401 || e.status === 403)) return 'API 키가 맞지 않아요 (HTTP ' + e.status + '). 설정에서 키를 확인해 주세요. 녹음은 이 기기에 보관했어요.';
+  return '지금 분석 서버가 붐벼요. 녹음은 이 기기에 보관했어요.';
+}
+function audioBody(model, level, prompt, wav, schema) {
+  return {
     model,
     input: [
       { type: 'text', text: prompt },
@@ -1654,28 +1847,190 @@ async function analyze(pcm, transcript) {
     response_format: { type: 'text', mime_type: 'application/json', schema },
     ...(level ? { generation_config: { thinking_level: level } } : {}),
     store: false
-  });
-  const chain = [
-    [ANALYSIS_MODEL, 'low', 45000],
-    ['gemini-3.8-flash', null, 45000],
-    [ANALYSIS_FALLBACK_MODEL, 'minimal', 60000],
-    ['gemini-3.1-flash-lite', null, 60000]
-  ];
+  };
+}
+async function runChain(chain, mkBody, onStatus) {
   let lastErr = null;
-  for (const [model, level, ms] of chain) {
+  for (const st of chain) {
+    if (st.wait) {
+      if (onStatus) onStatus('분석 서버가 붐벼요. ' + Math.round(st.wait / 1000) + '초 뒤 다시 해요.');
+      log(Math.round(st.wait / 1000) + '초 기다린 뒤 ' + st.model + ' 다시 시도');
+      await sleep(st.wait);
+    }
+    if (onStatus) onStatus('분석 중');
     try {
-      const r = await callInteractions(mk(model, level), ms);
-      return { json: r.json, model };
+      const r = await callInteractions(mkBody(st.model, st.level), st.ms);
+      const grade = gradeOf(st.model);
+      countUse(grade);
+      return { json: r.json, model: st.model, grade };
     } catch (e) {
       lastErr = e;
       if (e.status === 401 || e.status === 403) throw e;
-      log('분석 모델 ' + model + ' 실패 (' + (e.status || e.message) + '). 다음 모델로 넘어감', 'WARN');
+      if (e.status === 400) {
+        // 출력 형식(schema)을 서버가 거절했을 수 있다. 형식 지정 없이 한 번 더.
+        log('분석 모델 ' + st.model + ' 가 400 을 돌려줌. 출력 형식 지정 없이 한 번 더 시도', 'WARN');
+        try {
+          const b = mkBody(st.model, st.level);
+          b.response_format = { type: 'text', mime_type: 'application/json' };
+          b.input[0].text += '\n\nReturn ONLY one JSON object with exactly the fields described above. No markdown.';
+          const r2 = await callInteractions(b, st.ms);
+          const grade2 = gradeOf(st.model);
+          countUse(grade2);
+          return { json: r2.json, model: st.model, grade: grade2 };
+        } catch (e2) { lastErr = e2; log('형식 지정 없는 재시도도 실패 (' + (e2.status || e2.message) + ')', 'WARN'); }
+      }
+      log('분석 모델 ' + st.model + ' 실패 (' + (e.status || e.message) + '). 다음 단계로', 'WARN');
     }
   }
-  throw lastErr;
+  throw lastErr || new Error('분석 실패');
 }
 
-/* ===================== 다시 분석용 녹음 보관 (이 기기 안에만) ===================== */
+async function analyzeTalk(pcm, transcript, meta, mode, onStatus) {
+  const ls = (meta && meta.lesson) || {};
+  const level = LEVEL_RULES[ls.level] ? ls.level : levelCode();
+  return analyze(pcm, transcript, { level, focus: topicFocus(ls.topicIdx) }, mode, onStatus);
+}
+
+async function analyze(pcm, transcript, opt, mode, onStatus) {
+  opt = opt || {};
+  const level = LEVEL_RULES[opt.level] ? opt.level : levelCode();
+  const F = FOCUS[opt.focus] || FOCUS.tense_past;
+  const wav = encodeWav(pcm, TARGET_RATE);
+  log('분석용 WAV ' + (wav.length / 1024 / 1024).toFixed(2) + 'MB, ' + (pcm.length / TARGET_RATE).toFixed(1) + '초, 방식=' + (mode === 'temp' ? '임시' : '정밀'));
+  const convo = transcript.map(x => (x.role === 'ai' ? 'Tutor: ' : 'Learner (speech recognition, may be wrong): ') + x.text).join('\n');
+  const prompt = [
+    'You are an English speaking coach for a Korean learner at CEFR ' + level + ' level.',
+    'The attached audio contains the learner\'s voice from a short conversation. Silence or a faint tutor voice may also be present; judge only the learner.',
+    'The transcript below came from automatic speech recognition and may contain recognition errors. When the transcript and the audio disagree, trust the audio.',
+    'Today\'s focus grammar: ' + F.en + '. In "grammar", list errors of this focus type first.',
+    '',
+    'Transcript:',
+    convo,
+    '',
+    'Return JSON with:',
+    '- "grammar": at most 4 items, using the learner\'s real sentences. Include ONLY sentences that have a real grammar or word-choice error. NEVER list a sentence that is already correct or already natural English (for example "I\'m working now" is correct). Contractions (I\'m, don\'t, it\'s) are NOT errors. A different but also correct way of saying something is NOT an error. "said" = what the learner said, "corrected" = a natural corrected sentence that changes as little as possible, "reason_ko" = one short reason in Korean, "meaning_ko" = the natural Korean meaning of the corrected sentence (one short sentence, polite style).',
+    '  "type" = one of: tense (wrong verb tense, for example present for a past event), agreement (subject and verb do not match, for example "he go"), fragment (an incomplete sentence of a few words with no subject or verb), connector (ideas not joined, or joined with the wrong word such as because, so, but), word_choice, article_preposition (a, an, the, in, at, on and similar), other.',
+    '  "confidence" = "high" only when you are sure it is a real error that you heard in the audio. If you are not sure, use "low".',
+    '  "variant_en" = a NEW correct sentence with the same grammar pattern as "corrected", changing only the person, the time, or the place (for example "I went to a skin clinic." -> "My wife went to the hospital last week."). "variant_ko" = its natural Korean meaning (polite style).',
+    '  Return an empty list if there are no errors.',
+    '- "pronunciation": at most 5 items. Report ONLY words you clearly heard mispronounced in THIS audio. Do NOT flag words that sounded fine. Do NOT guess based on mistakes Korean learners commonly make. If you are not sure, leave it out. An empty list is fine. "word" = the English word, "heard_as_ko" = how it actually sounded (in Korean, you may quote the sound), "fix_ko" = how to fix it with mouth or tongue tips (in Korean), "confidence" = "high" only when you clearly heard the mistake, otherwise "low".',
+    '- "good_point_ko": one sentence in Korean about something specific the learner did well.',
+    'Korean writing rules: short sentences, polite style, no emoji, no em dash, no middle dot.'
+  ].join('\n');
+  const schema = {
+    type: 'object',
+    properties: {
+      grammar: { type: 'array', items: { type: 'object', properties: {
+        said: { type: 'string' }, corrected: { type: 'string' }, reason_ko: { type: 'string' }, meaning_ko: { type: 'string' },
+        type: { type: 'string', enum: GTYPES }, confidence: { type: 'string', enum: ['high', 'low'] },
+        variant_en: { type: 'string' }, variant_ko: { type: 'string' }
+      }, required: ['said', 'corrected', 'reason_ko', 'meaning_ko', 'type', 'confidence', 'variant_en', 'variant_ko'] } },
+      pronunciation: { type: 'array', items: { type: 'object', properties: {
+        word: { type: 'string' }, heard_as_ko: { type: 'string' }, fix_ko: { type: 'string' }, confidence: { type: 'string', enum: ['high', 'low'] }
+      }, required: ['word', 'heard_as_ko', 'fix_ko', 'confidence'] } },
+      good_point_ko: { type: 'string' }
+    },
+    required: ['grammar', 'pronunciation', 'good_point_ko']
+  };
+  return runChain(mode === 'temp' ? TEMP_CHAIN : PRECISE_CHAIN, (model, lv) => audioBody(model, lv, prompt, wav, schema), onStatus);
+}
+
+/* ---- 다시 말해 보기 확인 (flash-lite, minimal) ---- */
+function expandShort(s) {
+  return String(s || '').toLowerCase().replace(/[’]/g, "'")
+    .replace(/n't\b/g, ' not').replace(/'m\b/g, ' am').replace(/'re\b/g, ' are').replace(/'ll\b/g, ' will').replace(/'ve\b/g, ' have')
+    .replace(/\b(can) not\b/g, 'cannot');
+}
+function looseSent(s) { return normSent(expandShort(s)).split(' ').filter(w => w && w !== 'a' && w !== 'an' && w !== 'the' && w !== 'um' && w !== 'uh').join(' '); }
+async function verifySay(pcm, target) {
+  const wav = encodeWav(pcm, TARGET_RATE);
+  const prompt = [
+    'A Korean beginner learner of English tried to say this target sentence out loud:',
+    '"' + target + '"',
+    'The attached audio is the learner.',
+    '"heard": write exactly what the learner said, word for word, in English letters. Do NOT fix grammar. If there is no speech, write "".',
+    '"match": true if the learner said the target sentence with the same meaning and the same key grammar. Be lenient: ignore one missing or extra article (a, an, the), contractions (I\'m = I am), punctuation, a foreign accent, small pauses, and fillers like "um".',
+    'Set "match" to false if a key verb form is different (for example "go" instead of "went", "work" instead of "works", missing "am" or "is"), if important words are missing or changed, if it is a different sentence, or if there is no speech.'
+  ].join('\n');
+  const schema = { type: 'object', properties: { heard: { type: 'string' }, match: { type: 'boolean' } }, required: ['heard', 'match'] };
+  const r = await callInteractions(audioBody(VERIFY_MODEL, 'minimal', prompt, wav, schema), 20000);
+  countUse('verify');
+  const heard = String((r.json && r.json.heard) || '').trim();
+  let match = !!(r.json && r.json.match === true);
+  // 관대한 판정 보정: 관사, 줄임말, 문장부호만 다르면 맞음으로 (맞음을 다름으로 바꾸지는 않음)
+  if (!match && heard && looseSent(heard) === looseSent(target)) { match = true; log('확인 보정: 관사나 줄임말 차이만 있어 맞음으로 처리'); }
+  log('다시 말하기 확인: match=' + match + ', heard="' + heard.slice(0, 80) + '"');
+  return { heard, match };
+}
+
+/* ===================== 짧은 녹음 (번갈아 말하기와 같은 캡처 경로 재사용) ===================== */
+// startMic 이 만든 캡처 노드의 메시지 처리만 이 녹음용으로 바꿔 끼운다. 캡처 엔진 자체는 그대로 쓴다.
+// (startMic 직후 잠깐 onPcm 으로 가는 조각은 S !== s 라서 onPcm 이 바로 무시한다)
+let REC = null;
+function recBegin(maxSec, opts) {
+  opts = opts || {};
+  try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  const s = newSession('rec');
+  s.recChunks = []; s.recN = 0; s.maxN = Math.round(maxSec * TARGET_RATE);
+  s.voicedSec = 0; s.gapSec = 0; s.heardAny = false; s.peak = 0; s.stopped = false; s.recT0 = 0;
+  s.onCancel = opts.onCancel || null;
+  s.ctx = createAudioContextInGesture();   // 탭 안에서 동기 호출 (실패하면 throw)
+  REC = s;
+  s.ready = startMic(s).then(() => {
+    if (s.stopped) return;
+    const feed = f32 => recFeed(s, f32, opts.onAuto);
+    if (s.procNode && s.procNode.port) s.procNode.port.onmessage = ev => feed(ev.data);
+    else if (s.procNode) s.procNode.onaudioprocess = ev => feed(new Float32Array(ev.inputBuffer.getChannelData(0)));
+    s.recT0 = performance.now();
+    log('짧은 녹음 시작 (최대 ' + maxSec + '초, ' + s.captureKind + ')');
+  });
+  return s;
+}
+function recFeed(s, f32, onAuto) {
+  if (s.stopped) return;
+  let sum = 0;
+  for (let i = 0; i < f32.length; i++) sum += f32[i] * f32[i];
+  const rms = Math.sqrt(sum / f32.length);
+  if (rms > s.peak) s.peak = rms;
+  // 말한 시간: 말소리 조각 + 0.7초 이하의 짧은 쉼 (긴 침묵은 빼고 기기에서 직접 잼)
+  const dt = f32.length / s.ctx.sampleRate;
+  if (rms > SPEECH_RMS) {
+    if (s.heardAny && s.gapSec <= 0.7) s.voicedSec += s.gapSec;
+    s.voicedSec += dt; s.gapSec = 0; s.heardAny = true;
+  } else if (s.heardAny) s.gapSec += dt;
+  const pcm = s.resampler(f32);
+  if (!pcm.length) return;
+  const room = s.maxN - s.recN;
+  if (room <= 0) return;
+  const part = pcm.length > room ? pcm.subarray(0, room) : pcm;
+  s.recChunks.push(part); s.recN += part.length;
+  if (s.recN >= s.maxN && !s.autoFired) {
+    s.autoFired = true;
+    log('녹음 최대 길이 도달, 자동으로 끝냄');
+    if (onAuto) setTimeout(onAuto, 0);
+  }
+}
+async function recEnd(s) {
+  if (!s) return null;
+  s.stopped = true;
+  try { await s.ready; } catch (e) {}
+  await cleanupAudio(s);
+  if (REC === s) REC = null;
+  const pcm = concatInt16(s.recChunks, s.recN);
+  const out = { pcm, sec: pcm.length / TARGET_RATE, speechSec: Math.round(s.voicedSec * 10) / 10, peak: s.peak };
+  log('짧은 녹음 끝: ' + out.sec.toFixed(1) + '초, 말한 시간 ' + out.speechSec + '초, 최대 RMS=' + s.peak.toFixed(3));
+  return out;
+}
+function recCancel() {
+  const s = REC;
+  if (!s || s.stopped) return;
+  log('녹음 취소 (화면 이동 또는 숨김)', 'WARN');
+  recEnd(s);
+  if (s.onCancel) { try { s.onCancel(); } catch (e) {} }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && REC) recCancel(); });
+
+/* ===================== 저장소 (이 기기 안에만) ===================== */
 function idbOpen() {
   return new Promise((res, rej) => {
     const r = indexedDB.open('ec_store', 1);
@@ -1689,7 +2044,8 @@ async function idbSet(k, v) {
     const db = await idbOpen();
     await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
     db.close();
-  } catch (e) { log('녹음 보관 실패: ' + (e && e.message), 'WARN'); }
+    return true;
+  } catch (e) { log('녹음 보관 실패: ' + (e && e.message), 'WARN'); return false; }
 }
 async function idbGet(k) {
   try {
@@ -1699,10 +2055,96 @@ async function idbGet(k) {
     return v || null;
   } catch (e) { return null; }
 }
+async function idbDel(k) {
+  try {
+    const db = await idbOpen();
+    await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    db.close();
+  } catch (e) { log('보관 삭제 실패: ' + (e && e.message), 'WARN'); }
+}
+
+/* ---- 분석 대기열 (최대 3건). 목록은 localStorage, 녹음은 IndexedDB 'q:<id>' ---- */
+const LS_QUEUE = 'ec_queue_v1';
+const QUEUE_MAX = 3;
+const QMEM = {};   // 이 화면에서 만든 녹음은 메모리에도 둔다 (IndexedDB 가 안 될 때 대비)
+function qLoad() {
+  try { const a = JSON.parse(localStorage.getItem(LS_QUEUE) || '[]'); return Array.isArray(a) ? a.filter(x => x && x.id && x.kind) : []; }
+  catch (e) { return []; }
+}
+function qSave(a) { try { localStorage.setItem(LS_QUEUE, JSON.stringify(a)); } catch (e) { log('대기 목록 저장 실패: ' + e.message, 'WARN'); } }
+function qGet(id) { return qLoad().find(x => x.id === id) || null; }
+async function qAdd(item, payload) {
+  QMEM[item.id] = payload;
+  const ok = await idbSet('q:' + item.id, payload);
+  const a = qLoad().filter(x => x.id !== item.id);
+  a.push(item);
+  while (a.length > QUEUE_MAX) {
+    // 임시 분석이라도 받은 것부터, 그다음 가장 오래된 것부터 지운다
+    let k = a.findIndex(x => x.state === 'temp');
+    if (k < 0) k = 0;
+    const old = a.splice(k, 1)[0];
+    idbDel('q:' + old.id); delete QMEM[old.id];
+    if (old.kind === 'check' && D) { const c = D.checks.find(x => x.id === old.id); if (c && c.status === 'pending') { c.status = 'lost'; saveD(); } }
+    log('분석 대기가 ' + QUEUE_MAX + '건을 넘어 녹음 1건을 지움: ' + old.id, 'WARN');
+  }
+  qSave(a);
+  log('분석 대기에 보관: ' + item.kind + ' ' + item.id + (ok ? '' : ' (기기 저장 실패, 이 화면에서만 유지)'));
+  return true;
+}
+function qRemove(id) { qSave(qLoad().filter(x => x.id !== id)); delete QMEM[id]; idbDel('q:' + id); }
+function qSetState(id, state) { const a = qLoad(); const x = a.find(y => y.id === id); if (x) { x.state = state; qSave(a); } }
+async function qPayload(id) { return QMEM[id] || await idbGet('q:' + id); }
+function qLabel(x) {
+  const d = new Date(x.created);
+  const when = isNaN(d) ? '' : koDate(ymd(d)) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' ';
+  return when + (x.kind === 'check' ? '실력 확인' : ((TOPICS[x.topicIdx] || {}).ko || '대화'));
+}
+
+let qBusy = false;
+async function runQueueItem(id, mode, btn) {
+  if (qBusy) return;
+  const msgEl = curScreen === 'result' ? $('resActMsg') : $('queueMsg');
+  const say = t => { if (msgEl) msgEl.textContent = t; };
+  const it = qGet(id);
+  if (!it) { if (curScreen === 'home') renderHome(); say('이미 분석했거나 지운 녹음이에요.'); return; }
+  if (!getKey()) { say('API 키가 없어요. 설정에서 넣어 주세요.'); return; }
+  const p = await qPayload(id);
+  if (!p || !p.pcm || !p.pcm.length) { qRemove(id); if (curScreen === 'home') renderHome(); say('녹음을 찾지 못해 대기에서 뺐어요.'); return; }
+  qBusy = true;
+  const oldTxt = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '분석 중'; }
+  say(mode === 'temp' ? '임시 분석 중이에요.' : '정밀 분석 중이에요. 1분쯤 걸릴 수 있어요.');
+  const t = performance.now();
+  try {
+    if (it.kind === 'check') {
+      const r = await analyzeCheck(p.pcm, p.chk, say);
+      await applyCheck(p.chk, r, p.pcm);
+      qRemove(id);
+      qBusy = false;
+      showCheckResult(p.chk.id);
+      return;
+    }
+    const r = await analyzeTalk(p.pcm, p.transcript, p.meta, mode, say);
+    if (r.grade === 'precise') { dropCardsOf(p.meta.date); qRemove(id); }
+    else qSetState(id, 'temp');
+    qBusy = false;
+    showResult({ meta: p.meta, transcript: p.transcript, analysis: r.json, analysisMs: Math.round(performance.now() - t), analysisModel: r.model, grade: r.grade, note: '' });
+  } catch (e) {
+    qBusy = false;
+    log('대기 분석 실패: ' + e.message, 'ERR');
+    if (btn) { btn.disabled = false; btn.textContent = oldTxt; }
+    if (e.status === 401 || e.status === 403) say('API 키가 맞지 않아요. 설정에서 확인해 주세요. 녹음은 그대로 보관했어요.');
+    else if (mode === 'temp') say('임시 분석도 실패했어요. 녹음은 그대로 보관했어요.');
+    else say('아직 분석 서버가 붐벼요. 녹음은 그대로 보관했어요. 조금 뒤에 다시 눌러 주세요.');
+  }
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('[data-qrun]');
+  if (b) runQueueItem(b.getAttribute('data-qrun'), b.getAttribute('data-qmode') || 'precise', b);
+});
 
 /* ===================== 결과 화면 ===================== */
 let lastResult = null;
-let lastAnalysisInput = null;
 function sayButtons(text) {
   if (!window.speechSynthesis || !text) return '';
   const t = esc(text);
@@ -1724,24 +2166,45 @@ document.addEventListener('click', (ev) => {
   const b = ev.target.closest && ev.target.closest('.say');
   if (b) sayText(b.getAttribute('data-say'), parseFloat(b.getAttribute('data-rate')));
 });
-async function reAnalyze() {
-  const inp = lastAnalysisInput;
-  if (!inp) return;
-  const btn = $('reAnalyzeBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '분석 중'; }
-  const t = performance.now();
-  let analysis = null, analysisModel = null, note = '';
-  try {
-    const r = await analyze(inp.pcm, inp.transcript);
-    analysis = r.json; analysisModel = r.model;
-  } catch (e) {
-    log('다시 분석 실패: ' + e.message, 'ERR');
-    note = '분석에 실패했습니다 (' + e.message + '). 잠시 뒤 다시 눌러 주세요.';
-  }
-  showResult({ meta: inp.meta, transcript: inp.transcript, analysis, analysisMs: Math.round(performance.now() - t), analysisModel, note });
+
+// 분석 항목 정리 (없는 필드는 기본값). i = 원래 순서 (복습에 넣기 상태의 열쇠)
+function gList(a) {
+  return (a && Array.isArray(a.grammar) ? a.grammar : []).slice(0, 4)
+    .map((x, i) => (x && x.corrected ? Object.assign({}, x, { i, type: GTYPES.includes(x.type) ? x.type : 'other', confidence: x.confidence === 'low' ? 'low' : 'high' }) : null))
+    .filter(Boolean);
 }
+function pList(a) {
+  return (a && Array.isArray(a.pronunciation) ? a.pronunciation : []).slice(0, 5)
+    .filter(x => x && x.word).map(x => Object.assign({}, x, { confidence: x.confidence === 'low' ? 'low' : 'high' }));
+}
+function resGrade(r) { return r.grade || gradeOf(r.analysisModel); }
+function resFocus(r) { const ls = (r.meta && r.meta.lesson) || {}; return topicFocus(ls.topicIdx); }
+function isFocus(x, focus) { const F = FOCUS[focus]; return !!(F && F.gtypes.includes(x.type)); }
+function focusErrCount(a, focus) { return gList(a).filter(x => x.confidence === 'high' && isFocus(x, focus)).length; }
+function initSel(r) {
+  if (!r.analysis) return;
+  if (!Array.isArray(r.sel)) r.sel = [];
+  if (!Array.isArray(r.rej)) r.rej = [];
+  const grade = resGrade(r);
+  gList(r.analysis).forEach(x => {
+    if (typeof r.sel[x.i] !== 'boolean') r.sel[x.i] = grade === 'precise' && x.confidence === 'high';
+    if (typeof r.rej[x.i] !== 'boolean') r.rej[x.i] = false;
+  });
+}
+function saveResult(r) {
+  if (r !== storedResult) return;
+  try { localStorage.setItem(LS_RESULT, JSON.stringify(r)); } catch (e) { log('결과 저장 실패: ' + e.message, 'WARN'); }
+}
+function badgeHtml(grade) {
+  if (grade === 'precise') return '<span class="badge precise">정밀 분석</span>';
+  if (grade === 'temp') return '<span class="badge temp">임시 분석 (틀릴 수 있어요)</span>';
+  return '';
+}
+
 function showResult(result, fromStorage) {
   lastResult = result;
+  if (result.analysis && !result.grade) result.grade = resGrade(result);
+  initSel(result);
   if (!fromStorage) {
     storedResult = result;
     try { recordSession(result); } catch (e) { log('기록 반영 실패: ' + (e && e.message), 'ERR'); }
@@ -1749,32 +2212,266 @@ function showResult(result, fromStorage) {
   go('result');
   refreshKeyUI();
   $('resultTitle').textContent = fromStorage ? '지난 결과' : '결과';
-  if (!fromStorage) {
-    try { localStorage.setItem(LS_RESULT, JSON.stringify(result)); } catch (e) { log('결과 저장 실패: ' + e.message, 'WARN'); }
+  saveResult(result);
+  renderResultBody(!!fromStorage);
+  $('resultCard').scrollIntoView({ block: 'start' });
+  log('결과 표시 (분석 모델=' + (result.analysisModel || '없음') + ', 등급=' + (result.grade || '-') + ', 분석 ' + (result.analysisMs || 0) + 'ms)');
+}
+
+function gItemHtml(r, x, focus, interactive) {
+  const rej = !!(r.rej && r.rej[x.i]);
+  const on = !!(r.sel && r.sel[x.i]) && !rej;
+  let h = '<div class="item' + (rej ? ' rej' : '') + '" data-gi="' + x.i + '">';
+  if (isFocus(x, focus)) h += '<span class="ftag">오늘 집중</span>';
+  h += '<div class="said">' + esc(x.said) + '</div><div class="fixed">' + esc(x.corrected) + '</div>' + sayButtons(x.corrected) + '<div class="why">' + esc(x.reason_ko) + '</div>';
+  if (interactive) {
+    if (rej) h += '<div class="note">이상한 교정으로 표시했어요. 카드에 넣지 않아요.</div>';
+    else {
+      h += '<div class="ctl">';
+      if (r.committed) h += '<span class="note" style="margin:0;align-self:center">' + (on ? '복습 카드에 넣었어요.' : '복습 카드에 안 넣었어요.') + '</span>';
+      else h += '<button type="button" class="tgl' + (on ? ' on' : '') + '" data-tgl="' + x.i + '">' + (on ? '복습에 넣기: 켬' : '복습에 넣기: 끔') + '</button>';
+      h += '<button type="button" data-rej="' + x.i + '">이 교정이 이상해요</button></div>';
+    }
   }
-  const a = result.analysis;
-  const m = result.meta || {};
+  return h + '</div>';
+}
+function pItemHtml(x) {
+  return '<div class="item"><div class="fixed">' + esc(x.word) + '</div>' + sayButtons(x.word) + '<div class="why">들린 소리: ' + esc(x.heard_as_ko) + '</div><div>' + esc(x.fix_ko) + '</div></div>';
+}
+
+function renderResultBody(fromStorage) {
+  const r = lastResult;
+  const a = r.analysis;
+  const grade = resGrade(r);
+  const focus = resFocus(r);
+  const qi = r.meta && r.meta.date ? qGet(r.meta.date) : null;
+  const interactive = !!a && !!D;
   let h = '';
-  if (result.note) h += '<p class="err">' + esc(result.note) + '</p>';
-  if (!a && lastAnalysisInput) h += '<p><button id="reAnalyzeBtn" type="button">다시 분석</button></p>';
+  if (a) h += badgeHtml(grade);
+  if (r.note) h += '<p class="err">' + esc(r.note) + '</p>';
+  if (!a && qi && qi.state === 'pending') {
+    h += '<div class="btnrow"><button type="button" id="laterBtn" class="primary">나중에 분석</button><button type="button" id="tempBtn">임시 분석 받기 (정확도 낮음)</button></div>';
+    h += '<p class="note">나중에 분석은 홈의 "지금 분석" 버튼으로 받아요. 임시 분석은 틀린 교정이 섞일 수 있어요.</p>';
+  }
+  if (a && grade === 'temp' && qi) h += '<p><button type="button" class="wide" data-qrun="' + esc(qi.id) + '" data-qmode="precise">정밀 분석 다시 받기</button></p>';
+  h += '<div id="resActMsg" class="note"></div>';
   if (a) {
-    const g = (Array.isArray(a.grammar) ? a.grammar : []).slice(0, 4);
-    const p = (Array.isArray(a.pronunciation) ? a.pronunciation : []).slice(0, 5);
+    const g = gList(a);
+    const hi = g.filter(x => x.confidence === 'high').sort((p, q) => (isFocus(q, focus) ? 1 : 0) - (isFocus(p, focus) ? 1 : 0));
+    const lo = g.filter(x => x.confidence === 'low');
     h += '<h3>문법</h3>';
-    h += g.length ? g.map(x => '<div class="item"><div class="said">' + esc(x.said) + '</div><div class="fixed">' + esc(x.corrected) + '</div>' + sayButtons(x.corrected) + '<div class="why">' + esc(x.reason_ko) + '</div></div>').join('') : '<p class="empty">고칠 문법이 없습니다.</p>';
+    if (grade === 'temp' && interactive && !r.committed && g.length) h += '<p class="note" style="margin-top:0">임시 분석이라 "복습에 넣기"가 꺼져 있어요. 맞는 교정만 켜 주세요.</p>';
+    h += hi.length ? hi.map(x => gItemHtml(r, x, focus, interactive)).join('') : '<p class="empty">' + (lo.length ? '확실히 고칠 문법은 없었어요.' : '고칠 문법이 없습니다.') + '</p>';
+    if (lo.length) h += '<details class="low"><summary>확실하지 않은 ' + lo.length + '개는 숨겼어요. 보기</summary>' + lo.map(x => gItemHtml(r, x, focus, interactive)).join('') + '</details>';
+    const p = pList(a);
+    const phi = p.filter(x => x.confidence === 'high'), plo = p.filter(x => x.confidence === 'low');
     h += '<h3>발음</h3>';
-    h += p.length ? p.map(x => '<div class="item"><div class="fixed">' + esc(x.word) + '</div>' + sayButtons(x.word) + '<div class="why">들린 소리: ' + esc(x.heard_as_ko) + '</div><div>' + esc(x.fix_ko) + '</div></div>').join('') : '<p class="empty">확실히 틀린 발음은 없었습니다.</p>';
+    h += phi.length ? phi.map(pItemHtml).join('') : '<p class="empty">확실히 틀린 발음은 없었습니다.</p>';
+    if (plo.length) h += '<details class="low"><summary>확실하지 않은 ' + plo.length + '개는 숨겼어요. 보기</summary>' + plo.map(pItemHtml).join('') + '</details>';
     h += '<h3>잘한 점</h3><p>' + esc(a.good_point_ko || '') + '</p>';
   }
-  if (!fromStorage) h += '<h3>다시 말해 보기</h3><div id="rptBox"></div>';
-  h += '<h3>걸린 시간</h3><div class="timing">' + timingLines(result).map(esc).join('<br>') + '</div>';
-  h += '<h3>대화 내용</h3><div class="timing">' + (result.transcript || []).map(x => esc((x.role === 'ai' ? 'AI: ' : '나: ') + x.text)).join('<br>') + '</div>';
+  const live = interactive && !r.committed;
+  if (live) h += '<h3>다시 말해 보기</h3><div id="rptBox"></div>';
+  else if (a && r.committed) h += '<p class="note">이 결과의 복습 카드는 이미 저장했어요.</p>';
+  else if (!a && !fromStorage && !(qi && qi.state === 'pending')) h += '<h3>다시 말해 보기</h3><div id="rptBox"></div>';
+  const hh = D && r.meta ? D.history.find(x => x.id === r.meta.date) : null;
+  if (D && D.askMore && hh && hh.askMore) h += askMoreHtml(hh);
+  h += '<h3>걸린 시간</h3><div class="timing">' + timingLines(r).map(esc).join('<br>') + '</div>';
+  h += '<h3>대화 내용</h3><div class="timing">' + (r.transcript || []).map(x => esc((x.role === 'ai' ? 'AI: ' : '나: ') + x.text)).join('<br>') + '</div>';
   $('resultBody').innerHTML = h;
-  const rb = $('reAnalyzeBtn');
-  if (rb) rb.addEventListener('click', reAnalyze);
-  if (!fromStorage) startRepeat(a);
-  $('resultCard').scrollIntoView({ block: 'start' });
-  log('결과 표시 (분석 모델=' + (result.analysisModel || '없음') + ', 분석 ' + (result.analysisMs || 0) + 'ms)');
+  const lb = $('laterBtn');
+  if (lb) lb.addEventListener('click', () => go('done'));
+  const tb = $('tempBtn');
+  if (tb) tb.addEventListener('click', () => runQueueItem(qi.id, 'temp', tb));
+  if ($('rptBox')) startRepeat(r);
+}
+
+$('resultBody').addEventListener('click', ev => {
+  const r = lastResult;
+  if (!r || !r.analysis) return;
+  const tg = ev.target.closest && ev.target.closest('[data-tgl]');
+  if (tg) {
+    if (r.committed) return;
+    const i = parseInt(tg.getAttribute('data-tgl'), 10);
+    r.sel[i] = !r.sel[i];
+    tg.classList.toggle('on', r.sel[i]);
+    tg.textContent = r.sel[i] ? '복습에 넣기: 켬' : '복습에 넣기: 끔';
+    saveResult(r);
+    if (rpt && rpt.r === r && rpt.i === -1) renderRepeat();
+    return;
+  }
+  const rj = ev.target.closest && ev.target.closest('[data-rej]');
+  if (rj) {
+    const i = parseInt(rj.getAttribute('data-rej'), 10);
+    const x = gList(r.analysis).find(y => y.i === i);
+    if (!x || r.rej[i]) return;
+    r.rej[i] = true; r.sel[i] = false;
+    if (D) {
+      D.rejected.push({ day: todayStr(), resId: r.meta && r.meta.date, said: x.said, corrected: x.corrected, type: x.type, confidence: x.confidence, model: r.analysisModel || null, grade: resGrade(r) });
+      if (D.rejected.length > 200) D.rejected.splice(0, D.rejected.length - 200);
+      if (r.committed) {
+        const key = normSent(x.corrected);
+        const before = D.cards.length;
+        D.cards = D.cards.filter(c => !(c.resId === (r.meta && r.meta.date) && normSent(c.back) === key));
+        if (D.cards.length < before) log('이상한 교정이라 카드에서 뺌');
+      }
+      saveD();
+    }
+    saveResult(r);
+    log('이상한 교정 표시: type=' + x.type + ', confidence=' + x.confidence);
+    const item = rj.closest('.item');
+    if (item) item.outerHTML = gItemHtml(r, x, resFocus(r), true);
+    if (rpt && rpt.r === r && rpt.i === -1) renderRepeat();
+  }
+});
+
+// 켜진 항목만 카드로 저장 (다시 말해 보기를 마칠 때, 또는 결과 화면을 떠날 때 한 번)
+function commitCards(r) {
+  if (!r || r.committed || !r.analysis || !D || !r.meta) return 0;
+  initSel(r);
+  const ls = r.meta.lesson || {};
+  let n = 0;
+  gList(r.analysis).forEach(x => {
+    if (!r.sel[x.i] || r.rej[x.i]) return;
+    if (addCard({ front: x.meaning_ko || '', back: x.corrected, said: x.said, why: x.reason_ko, src: 'grammar', topicIdx: ls.topicIdx,
+      vEn: x.variant_en || '', vKo: x.variant_ko || '', resId: r.meta.date, grade: resGrade(r), gtype: x.type })) n++;
+  });
+  r.committed = true; r.cardsAdded = n;
+  saveD();
+  saveResult(r);
+  log('복습 카드 저장: ' + n + '장 (' + r.meta.date + ')');
+  return n;
+}
+function dropCardsOf(resId) {
+  if (!D || !resId) return;
+  const before = D.cards.length;
+  D.cards = D.cards.filter(c => !(c.src === 'grammar' && c.resId === resId));
+  if (D.cards.length !== before) { log('정밀 분석으로 바꾸며 이전 카드 ' + (before - D.cards.length) + '장 뺌'); saveD(); }
+}
+
+/* ---- 다시 말해 보기 (말하고 AI가 확인) ---- */
+const REPEAT_MAX_SEC = 10;
+let rpt = null;
+function repeatItems(r) {
+  if (!r.analysis) return [];
+  const focus = resFocus(r);
+  return gList(r.analysis).filter(x => r.sel[x.i] && !r.rej[x.i])
+    .sort((p, q) => (isFocus(q, focus) ? 1 : 0) - (isFocus(p, focus) ? 1 : 0)).slice(0, 3);
+}
+function startRepeat(r) {
+  if (rpt && rpt.rec) { const old = rpt.rec; rpt.rec = null; recEnd(old); }
+  rpt = { r, items: [], i: -1, st: 'ready', heard: '', match: null, tries: 0, ok: 0, msg: '', rec: null, tick: null };
+  renderRepeat();
+}
+function rptDoneButton(box, text) {
+  box.innerHTML = '<p>' + esc(text) + '</p><button type="button" id="rptDoneBtn" class="primary start">오늘 연습 끝</button>';
+  $('rptDoneBtn').addEventListener('click', () => { commitCards(rpt && rpt.r); go('done'); });
+}
+function renderRepeat() {
+  const box = $('rptBox');
+  if (!box || !rpt) return;
+  const r = rpt.r;
+  if (rpt.i === -1) {
+    if (!r.analysis) { rptDoneButton(box, '분석 결과가 없어 따라 할 문장이 없어요.'); return; }
+    const n = repeatItems(r).length;
+    if (!n) { rptDoneButton(box, gList(r.analysis).length ? '복습에 넣기로 한 문장이 없어요.' : '고칠 문장이 없었어요. 잘했어요.'); return; }
+    box.innerHTML = '<p class="note" style="margin-top:0">복습에 넣기로 한 문장을 직접 말해 봐요. AI가 맞게 말했는지 확인해요.</p><button type="button" id="rptStartBtn" class="primary start">다시 말해 보기 시작 (' + n + '문장)</button>';
+    $('rptStartBtn').addEventListener('click', () => { rpt.items = repeatItems(r); rpt.i = 0; rpt.st = 'ready'; renderRepeat(); });
+    return;
+  }
+  while (rpt.i < rpt.items.length && r.rej[rpt.items[rpt.i].i]) rpt.i++;
+  if (rpt.i >= rpt.items.length) {
+    const n = commitCards(r);
+    const hh = D && r.meta ? D.history.find(x => x.id === r.meta.date) : null;
+    if (hh) { hh.rptN = rpt.items.length; hh.rptOk = rpt.ok; saveD(); }
+    rptDoneButton(box, '다 했어요. 복습 카드 ' + (r.cardsAdded != null ? r.cardsAdded : n) + '장을 넣었어요. 내일부터 다시 나와요.');
+    return;
+  }
+  const x = rpt.items[rpt.i];
+  let h = '<div class="note" style="margin:0">' + (rpt.i + 1) + ' / ' + rpt.items.length + '</div>' +
+    (x.meaning_ko ? '<div class="rko">' + esc(x.meaning_ko) + '</div>' : '') +
+    '<div class="en-big">' + esc(x.corrected) + '</div>' + sayButtons(x.corrected);
+  const st = rpt.st;
+  if (st === 'ready') {
+    h += '<p class="note">먼저 듣고, 말하기를 누른 뒤 따라 말하세요. 다 말하면 한 번 더 누르세요. (최대 ' + REPEAT_MAX_SEC + '초)</p>';
+    if (rpt.msg) h += '<p class="err">' + esc(rpt.msg) + '</p>';
+    h += '<button type="button" id="rptRecBtn" class="primary start">말하기</button>';
+  } else if (st === 'starting') h += '<button type="button" class="primary start" disabled>마이크 켜는 중</button>';
+  else if (st === 'rec') h += '<button type="button" id="rptRecBtn" class="primary start rec">다 말했어요 (<span id="rptLeft">' + REPEAT_MAX_SEC + '</span>초)</button>';
+  else if (st === 'checking') h += '<button type="button" class="primary start" disabled>확인 중</button>';
+  else if (st === 'judged') {
+    h += '<div class="heard">들린 말: ' + esc(rpt.heard || '(잘 안 들렸어요)') + '</div>';
+    h += rpt.match ? '<p class="okmsg">맞아요. 잘했어요.</p>' : '<p class="nomsg">조금 달라요.' + (rpt.tries < 3 ? ' 한 번 더 해 볼까요?' : '') + '</p>';
+    h += '<div class="btnrow">' + (!rpt.match && rpt.tries < 3 ? '<button type="button" id="rptAgainBtn" class="primary">한 번 더</button>' : '') + '<button type="button" id="rptNextBtn"' + (rpt.match || rpt.tries >= 3 ? ' class="primary"' : '') + '>다음</button></div>';
+  } else if (st === 'fallback') {
+    h += '<p class="note">' + esc(rpt.msg || '지금은 확인을 할 수 없어요.') + ' 듣고 소리 내어 두 번 따라 말해 보세요.</p><button type="button" id="rptSelfBtn" class="primary start">따라 말했어요</button>';
+  }
+  if (st === 'ready' || st === 'judged' || st === 'fallback') h += '<button type="button" id="rptSkipBtn" class="wide" style="margin-top:8px">건너뛰기</button>';
+  box.innerHTML = h;
+  const nextItem = () => { rpt.i++; rpt.st = 'ready'; rpt.tries = 0; rpt.heard = ''; rpt.match = null; rpt.msg = ''; renderRepeat(); };
+  const rb = $('rptRecBtn');
+  if (rb) rb.addEventListener('click', () => { if (rpt.st === 'rec') rptRecStop(); else rptRecStart(); });
+  const ag = $('rptAgainBtn');
+  if (ag) ag.addEventListener('click', () => rptRecStart());
+  const nb = $('rptNextBtn');
+  if (nb) nb.addEventListener('click', nextItem);
+  const sb = $('rptSelfBtn');
+  if (sb) sb.addEventListener('click', nextItem);
+  const kb = $('rptSkipBtn');
+  if (kb) kb.addEventListener('click', () => { log('다시 말하기 건너뜀'); nextItem(); });
+}
+function rptRecStart() {
+  rpt.msg = '';
+  let rec;
+  try {
+    rec = recBegin(REPEAT_MAX_SEC, {
+      onAuto: () => rptRecStop(),
+      onCancel: () => { if (rpt && rpt.rec === rec) { rpt.rec = null; clearInterval(rpt.tick); rpt.st = 'ready'; rpt.msg = '녹음이 멈췄어요. 다시 눌러 주세요.'; renderRepeat(); } }
+    });
+  } catch (e) {
+    log('녹음 시작 실패: ' + e.message, 'WARN');
+    rpt.st = 'fallback'; rpt.msg = '마이크를 켤 수 없어요.'; renderRepeat(); return;
+  }
+  const mine = rpt;
+  mine.rec = rec; mine.st = 'starting'; renderRepeat();
+  rec.ready.then(() => {
+    if (mine !== rpt || mine.rec !== rec || rec.stopped) return;
+    mine.st = 'rec'; renderRepeat();
+    clearInterval(mine.tick);
+    mine.tick = setInterval(() => { const el = $('rptLeft'); if (el && rec.recT0) el.textContent = String(Math.max(0, Math.ceil(REPEAT_MAX_SEC - (performance.now() - rec.recT0) / 1000))); }, 250);
+  }).catch(async e => {
+    log('마이크 실패: ' + (e && (e.name + ': ' + e.message)), 'WARN');
+    if (mine.rec === rec) mine.rec = null;
+    await recEnd(rec);
+    if (mine !== rpt) return;
+    mine.st = 'fallback';
+    mine.msg = e && e.name === 'NotAllowedError' ? '마이크 권한이 꺼져 있어요.' : '마이크를 켤 수 없어요.';
+    renderRepeat();
+  });
+}
+async function rptRecStop() {
+  const mine = rpt;
+  const rec = mine && mine.rec;
+  if (!rec) return;
+  mine.rec = null; clearInterval(mine.tick);
+  mine.st = 'checking'; renderRepeat();
+  const res = await recEnd(rec);
+  if (mine !== rpt) return;
+  if (res.sec < 0.5 || res.peak < SPEECH_RMS * 0.5) { mine.st = 'ready'; mine.msg = '소리가 잘 안 들렸어요. 다시 해 볼까요?'; renderRepeat(); return; }
+  const x = mine.items[mine.i];
+  mine.tries++;
+  try {
+    if (!getKey()) throw new Error('키 없음');
+    const v = await verifySay(res.pcm, x.corrected);
+    if (mine !== rpt || mine.items[mine.i] !== x) return;
+    mine.heard = v.heard; mine.match = v.match; mine.st = 'judged';
+    if (v.match && !x._ok) { x._ok = true; mine.ok++; }
+  } catch (e) {
+    log('다시 말하기 확인 실패: ' + e.message, 'WARN');
+    if (mine !== rpt) return;
+    mine.st = 'fallback'; mine.msg = '지금은 AI 확인을 할 수 없어요.';
+  }
+  renderRepeat();
 }
 
 function timingLines(r) {
@@ -1798,14 +2495,15 @@ function resultAsText(r) {
   const out = ['[영어 말하기 결과] ' + (r.meta && r.meta.date ? r.meta.date.slice(0, 16).replace('T', ' ') : '')];
   if (r.note) out.push(r.note);
   if (a) {
+    out.push(resGrade(r) === 'precise' ? '정밀 분석' : '임시 분석 (틀릴 수 있어요)');
     out.push('', '문법');
-    const g = (a.grammar || []).slice(0, 4);
+    const g = gList(a);
     if (!g.length) out.push('- 고칠 문법이 없습니다.');
-    g.forEach((x, i) => out.push((i + 1) + '. ' + x.said + ' -> ' + x.corrected + ' (' + x.reason_ko + ')'));
+    g.forEach((x, k) => out.push((k + 1) + '. ' + x.said + ' -> ' + x.corrected + ' (' + x.reason_ko + ') [' + x.type + (x.confidence === 'low' ? ', 확실하지 않음' : '') + (r.rej && r.rej[x.i] ? ', 이상하다고 표시' : '') + ']'));
     out.push('', '발음');
-    const p = (a.pronunciation || []).slice(0, 5);
+    const p = pList(a);
     if (!p.length) out.push('- 확실히 틀린 발음은 없었습니다.');
-    p.forEach((x, i) => out.push((i + 1) + '. ' + x.word + ': 들린 소리 ' + x.heard_as_ko + ' / 고치는 법 ' + x.fix_ko));
+    p.forEach((x, k) => out.push((k + 1) + '. ' + x.word + ': 들린 소리 ' + x.heard_as_ko + ' / 고치는 법 ' + x.fix_ko + (x.confidence === 'low' ? ' (확실하지 않음)' : '')));
     out.push('', '잘한 점', a.good_point_ko || '');
   }
   out.push('', '걸린 시간');
@@ -1857,11 +2555,13 @@ function langHintOk() { try { return localStorage.getItem('ec_lang_hint_bad') !=
   sel.addEventListener('change', () => setMinutes(parseInt(sel.value, 10) || 5));
 })();
 
-/* ===================== 학습 흐름 (0.2.0) ===================== */
+/* ===================== 학습 흐름 (0.2.0, 0.3.0) ===================== */
 const LS_DATA = 'ec_data_v1';
 const INTERVALS = [1, 3, 7, 14, 30];      // 복습 간격(일). 30일 통과하면 졸업
 const REVIEW_MAX = 6;                     // 한 번에 최대 카드 수
 const REVIEW_MS = 2 * 60 * 1000;          // 복습 2분 상한
+const CHECK_MAX_SEC = 40;                 // 실력 확인 답 하나 최대 길이
+const CHECK_EVERY = 14;                   // 실력 확인 간격(일)
 let storedResult = null;                  // 가장 최근 결과 (ec_last_result)
 let curScreen = '';
 
@@ -1870,10 +2570,20 @@ function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + p
 function todayStr() { return ymd(new Date()); }
 function addDays(s, n) { const p = s.split('-').map(Number); return ymd(new Date(p[0], p[1] - 1, p[2] + n)); }
 function koDate(s) { const p = s.split('-').map(Number); return p[1] + '월 ' + p[2] + '일'; }
+function daysBetween(a, b) {
+  const p = a.split('-').map(Number), q = b.split('-').map(Number);
+  return Math.round((new Date(q[0], q[1] - 1, q[2]) - new Date(p[0], p[1] - 1, p[2])) / 86400000);
+}
 
 /* ---- 저장 ---- */
 function newD(name, level) {
-  return { profile: { name: name || '', level: level || 'A2', created: todayStr() }, topicIdx: 0, topicCount: 0, cards: [], history: [], days: {}, sounds: {} };
+  return { profile: { name: name || '', level: level || 'A2', created: todayStr() }, topicIdx: 0, topicCount: 0, askMore: false, cards: [], history: [], days: {}, sounds: {}, rejected: [], checks: [], usage: null, introSeen: false, promotions: [] };
+}
+function frameByEx(ex) { for (const t of TOPICS) for (const f of t.frames) if (f.ex === ex) return f; return null; }
+function normCard(c) {
+  if (typeof c.reps !== 'number') c.reps = c.last ? 1 : 0;   // 0.2.1 카드: 한 번 복습했으면 1
+  if (c.src === 'frame' && !c.vEn) { const f = frameByEx(c.back); if (f) { c.vEn = f.vEn; c.vKo = f.vKo; } }
+  return c;
 }
 function normD(o) {
   if (!o || typeof o !== 'object' || !o.profile || typeof o.profile !== 'object') return null;
@@ -1882,11 +2592,17 @@ function normD(o) {
   return {
     profile: { name: String(o.profile.name || '').slice(0, 20), level: LEVEL_RULES[o.profile.level] ? o.profile.level : 'A2', created: String(o.profile.created || todayStr()) },
     topicIdx: idx >= 0 && idx < TOPICS.length ? idx : 0,
-    topicCount: cnt >= 0 && cnt < PER_TOPIC ? cnt : 0,
-    cards: Array.isArray(o.cards) ? o.cards.filter(c => c && typeof c.back === 'string' && c.back) : [],
+    topicCount: cnt >= 0 && cnt < MAX_TRIES ? cnt : 0,
+    askMore: !!o.askMore,
+    cards: Array.isArray(o.cards) ? o.cards.filter(c => c && typeof c.back === 'string' && c.back).map(normCard) : [],
     history: Array.isArray(o.history) ? o.history.filter(h => h && h.id) : [],
     days: o.days && typeof o.days === 'object' ? o.days : {},
-    sounds: o.sounds && typeof o.sounds === 'object' ? o.sounds : {}
+    sounds: o.sounds && typeof o.sounds === 'object' ? o.sounds : {},
+    rejected: Array.isArray(o.rejected) ? o.rejected.slice(-200) : [],
+    checks: Array.isArray(o.checks) ? o.checks.filter(c => c && c.id && c.day) : [],
+    usage: o.usage && typeof o.usage === 'object' ? o.usage : null,
+    introSeen: !!o.introSeen,
+    promotions: Array.isArray(o.promotions) ? o.promotions : []
   };
 }
 function loadD() {
@@ -1909,6 +2625,13 @@ function saveD() {
   try { localStorage.setItem(LS_DATA, JSON.stringify(D)); }
   catch (e) { log('기록 저장 실패: ' + (e && (e.name + ': ' + e.message)), 'ERR'); }
 }
+function countUse(kind) {
+  if (!D || !kind) return;
+  const t = todayStr();
+  if (!D.usage || D.usage.day !== t) D.usage = { day: t, precise: 0, temp: 0, verify: 0 };
+  D.usage[kind] = (D.usage[kind] || 0) + 1;
+  saveD();
+}
 function setMinutes(n) {
   if (![3, 5, 10].includes(n)) n = 5;
   LIMIT_MIN = n;
@@ -1923,18 +2646,21 @@ document.addEventListener('click', (ev) => {
 });
 
 /* ---- 화면 전환 ---- */
-const SCREENS = { profile: 'scrProfile', home: 'scrHome', prep: 'scrPrep', talk: 'talkCard', result: 'resultCard', done: 'scrDone', review: 'scrReview', history: 'scrHistory', settings: 'scrSettings' };
+const SCREENS = { profile: 'scrProfile', intro: 'scrIntro', home: 'scrHome', prep: 'scrPrep', talk: 'talkCard', result: 'resultCard', done: 'scrDone', review: 'scrReview', history: 'scrHistory', guide: 'scrGuide', check: 'scrCheck', settings: 'scrSettings' };
 function go(name) {
   if (!D && name !== 'profile') name = 'profile';
+  if (curScreen === 'result' && name !== 'result' && lastResult) commitCards(lastResult);
+  if (REC && name !== curScreen) recCancel();
   Object.keys(SCREENS).forEach(k => show(SCREENS[k], k === name));
   curScreen = name;
-  show('nav', name !== 'talk' && name !== 'profile');
+  show('nav', name !== 'talk' && name !== 'profile' && name !== 'intro');
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.getAttribute('data-go') === name));
   if (name === 'profile') renderProfile();
   else if (name === 'home') renderHome();
   else if (name === 'prep') renderPrep();
   else if (name === 'done') renderDone();
   else if (name === 'history') renderHistory();
+  else if (name === 'guide') renderGuide();
   else if (name === 'settings') renderSettings();
   window.scrollTo(0, 0);
 }
@@ -1944,11 +2670,13 @@ document.addEventListener('click', ev => {
   if (S && !S.ended) return; // 대화 중에는 이동하지 않음
   go(b.getAttribute('data-go'));
 });
+window.addEventListener('pagehide', () => { if (curScreen === 'result' && lastResult) commitCards(lastResult); });
 
 function levelChoices(name, sel) {
   return LEVELS.map(l => '<label class="choice"><input type="radio" name="' + name + '" value="' + l.code + '"' + (l.code === sel ? ' checked' : '') + '><div><b>' + esc(l.ko) + '(' + l.code + ')</b><span>' + esc(l.desc) + '</span></div></label>').join('');
 }
 function checkedLevel(name) { const el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : 'A2'; }
+function levelKo(code) { const l = LEVELS.find(x => x.code === code); return l ? l.ko : code; }
 
 /* ---- 프로필 (처음 한 번) ---- */
 function renderProfile() { $('pfLevels').innerHTML = levelChoices('pfLevel', 'A2'); }
@@ -1956,7 +2684,40 @@ $('pfSaveBtn').addEventListener('click', () => {
   D = newD($('pfName').value.trim().slice(0, 20), checkedLevel('pfLevel'));
   saveD();
   log('프로필 만듦: 수준=' + D.profile.level);
-  go('home');
+  go('intro');
+});
+$('introOkBtn').addEventListener('click', () => { D.introSeen = true; saveD(); go('home'); });
+
+/* ---- 주제 진도 ---- */
+function attemptLabel() { const n = lessonAttempt(); return n <= PER_TOPIC ? n + ' / ' + PER_TOPIC + '번째' : n + '번째, 한 번 더'; }
+function advanceTopic(h) {
+  if (h) h.topicDone = true;
+  D.topicIdx = (D.topicIdx + 1) % TOPICS.length;
+  D.topicCount = 0;
+  D.askMore = false;
+  log('주제 완료, 다음 주제로: ' + (D.topicIdx + 1));
+}
+function askMoreHtml(h) {
+  const fe = h && h.focusErr != null ? h.focusErr : FOCUS_HOLD;
+  const F = FOCUS[topicFocus(D.topicIdx)];
+  return '<div class="askbox"><p><b>이 주제를 한 번 더 해 볼까요?</b></p><p>이번 대화에서 오늘 집중("' + esc(F.ko) + '") 오류가 ' + esc(fe) + '개 나왔어요. 한 번 더 하면 더 단단해져요. (한 주제는 최대 ' + MAX_TRIES + '번)</p>' +
+    '<div class="btnrow"><button type="button" class="primary" data-ask="more">한 번 더</button><button type="button" data-ask="next">다음 주제로</button></div></div>';
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('[data-ask]');
+  if (!b || !D) return;
+  const box = b.closest('.askbox');
+  if (b.getAttribute('data-ask') === 'next') {
+    const h = D.history.filter(x => x.askMore).pop();
+    advanceTopic(h);
+    if (box) box.innerHTML = '<p>다음 주제 "' + esc(curTopic().ko) + '"로 넘어갔어요.</p>';
+  } else {
+    D.askMore = false;
+    log('한 번 더 선택: 주제 ' + (D.topicIdx + 1) + ', ' + lessonAttempt() + '번째');
+    if (box) box.innerHTML = '<p>좋아요. "' + esc(curTopic().ko) + '"를 한 번 더 해요.</p>';
+  }
+  saveD();
+  if (curScreen === 'home') renderHome();
 });
 
 /* ---- 홈 ---- */
@@ -1988,6 +2749,26 @@ function todayTalks() { const t = todayStr(); return D.history.filter(h => h.day
 function reviewedToday() { const t = todayStr(); return D.cards.filter(c => c.last === t).length; }
 function nextStep() { return dueCards().length > 0 && reviewedToday() === 0 ? 'review' : 'prep'; }
 
+function renderQueue() {
+  const q = qLoad();
+  $('queueMsg').textContent = '';
+  show('queueCard', q.length > 0);
+  if (!q.length) return;
+  const pend = q.filter(x => x.state !== 'temp');
+  const temp = q.filter(x => x.state === 'temp');
+  let h = '';
+  if (pend.length) {
+    h += '<p style="margin:0 0 6px"><b>분석 대기 ' + pend.length + '건</b><br><span class="note">서버가 붐벼서 아직 분석하지 못한 녹음이에요. 이 기기에 보관 중이에요.</span></p>';
+    h += pend.map(x => '<div class="sumrow"><span>' + esc(qLabel(x)) + '</span></div>').join('');
+    h += '<button type="button" class="primary wide" style="margin-top:8px" data-qrun="' + esc(pend[0].id) + '" data-qmode="precise">지금 분석</button>';
+  }
+  if (temp.length) {
+    h += '<p style="margin:12px 0 6px"><b>임시 분석만 받은 대화 ' + temp.length + '건</b></p>';
+    h += temp.map(x => '<div class="sumrow"><span>' + esc(qLabel(x)) + '</span><button type="button" class="small" data-qrun="' + esc(x.id) + '" data-qmode="precise">정밀 분석 다시 받기</button></div>').join('');
+  }
+  $('queueBody').innerHTML = h;
+}
+
 function renderHome() {
   if (!D) return;
   const name = D.profile.name;
@@ -1997,7 +2778,7 @@ function renderHome() {
   $('weekRow').innerHTML = w.html;
   $('weekN').textContent = '이번 주 ' + w.n + '일 했어요';
   show('noKeyCard', !getKey());
-  show('pendingCard', !!(storedResult && !storedResult.analysis && lastAnalysisInput));
+  renderQueue();
 
   const due = dueCards().length;
   const rv = reviewedToday();
@@ -2011,26 +2792,30 @@ function renderHome() {
   const reviewDone = !(due > 0 && rv === 0);
   const items = [
     { title: '복습', text: rvText, done: reviewDone, next: step === 'review' },
-    { title: '준비', text: '"' + t.ko + '" 문장 틀 3개 듣기', done: talks > 0, next: step === 'prep' && talks === 0 },
+    { title: '준비', text: '"' + t.ko + '" 문장 틀 3개와 오늘 집중 하나', done: talks > 0, next: step === 'prep' && talks === 0 },
     { title: '대화', text: talks > 0 ? '오늘 ' + talks + '번 했어요' : 'AI와 ' + LIMIT_MIN + '분 대화하기', done: talks > 0, next: false }
   ];
   $('homeSteps').innerHTML = items.map((it, i) => '<li class="' + (it.done ? 'done' : it.next ? 'next' : '') + '"><div class="num">' + (it.done ? '끝' : (i + 1)) + '</div><div><b>' + esc(it.title) + '</b><span>' + esc(it.text) + '</span></div></li>').join('');
   $('goBtn').textContent = step === 'review' ? '오늘 연습 시작 (복습부터)' : talks > 0 ? '한 번 더 연습하기' : '오늘 연습 시작';
-  $('homeTopic').innerHTML = '<div class="ttl">' + esc(t.ko) + ' (' + lessonAttempt() + ' / ' + PER_TOPIC + '번째)</div><div class="goal">' + esc(t.goal) + '</div><div class="note" style="margin:0">주제 ' + (D.topicIdx + 1) + ' / ' + TOPICS.length + '. 대화를 ' + PER_TOPIC + '번 하면 다음 주제로 넘어가요.</div>';
+  const F = FOCUS[t.focus];
+  $('homeTopic').innerHTML = '<div class="ttl">' + esc(t.ko) + ' (' + esc(attemptLabel()) + ')</div><div class="goal">' + esc(t.goal) + '</div>' +
+    '<div class="note" style="margin:0 0 4px">오늘 집중: ' + esc(F.ko) + '</div>' +
+    '<div class="note" style="margin:0">주제 ' + (D.topicIdx + 1) + ' / ' + TOPICS.length + '. 대화를 ' + PER_TOPIC + '번 하면 다음 주제로 넘어가요. 3번째에 집중 오류가 많으면 한 번 더 할지 물어봐요.</div>' +
+    (D.askMore ? askMoreHtml(D.history.filter(x => x.askMore).pop()) : '');
+  renderCheckCard();
 }
 $('goBtn').addEventListener('click', () => { if (nextStep() === 'review') startReview(); else go('prep'); });
-$('pendingBtn').addEventListener('click', () => { if (storedResult) showResult(storedResult, true); });
 $('nextTopicBtn').addEventListener('click', () => {
   const nx = TOPICS[(D.topicIdx + 1) % TOPICS.length];
   if (!confirm('"' + nx.ko + '" 주제로 넘어갈까요?')) return;
-  D.topicIdx = (D.topicIdx + 1) % TOPICS.length; D.topicCount = 0; saveD();
+  D.topicIdx = (D.topicIdx + 1) % TOPICS.length; D.topicCount = 0; D.askMore = false; saveD();
   log('주제 넘김: ' + (D.topicIdx + 1));
   renderHome();
 });
 $('prevTopicBtn').addEventListener('click', () => {
   const pi = (D.topicIdx - 1 + TOPICS.length) % TOPICS.length;
   if (!confirm('"' + TOPICS[pi].ko + '" 주제를 처음부터 다시 할까요?')) return;
-  D.topicIdx = pi; D.topicCount = 0; saveD();
+  D.topicIdx = pi; D.topicCount = 0; D.askMore = false; saveD();
   log('이전 주제로: ' + (D.topicIdx + 1));
   renderHome();
 });
@@ -2039,10 +2824,17 @@ $('prevTopicBtn').addEventListener('click', () => {
 function framesHtml(t, withSay) {
   return t.frames.map(f => '<div class="frame"><div class="en">' + esc(f.en) + '</div><div class="ko">' + esc(f.ko) + '</div><div class="ex">예: ' + esc(f.ex) + '</div><div class="exko">' + esc(f.exKo) + '</div>' + (withSay ? sayButtons(f.ex) : '') + '</div>').join('');
 }
+function focusBoxHtml(key) {
+  const F = FOCUS[key];
+  if (!F) return '';
+  return '<div class="focusbox"><span class="ftag">오늘 집중 하나</span><div><b>' + esc(F.ko) + '</b></div><p>' + esc(F.l1) + '<br>' + esc(F.l2) + '</p>' +
+    '<div class="said">' + esc(F.bad) + '</div><div class="fixed">' + esc(F.good) + '</div>' + sayButtons(F.good) + '</div>';
+}
 function renderPrep() {
   const t = curTopic();
-  $('prepTitle').textContent = t.ko + ' (' + lessonAttempt() + ' / ' + PER_TOPIC + '번째)';
+  $('prepTitle').textContent = t.ko + ' (' + attemptLabel() + ')';
   $('prepGoal').textContent = '목표: ' + t.goal;
+  $('prepFocus').innerHTML = focusBoxHtml(t.focus);
   $('prepFrames').innerHTML = framesHtml(t, true);
   const modeEl = document.querySelector('input[name=mode]:checked');
   const live = !modeEl || modeEl.value === 'live';
@@ -2051,7 +2843,9 @@ function renderPrep() {
 }
 function renderTalkFrames() {
   // 대화 중에는 소리 버튼 없이 글만 (마이크와 겹치지 않게)
-  $('talkFramesBody').innerHTML = framesHtml(curTopic(), false);
+  const t = curTopic();
+  const F = FOCUS[t.focus];
+  $('talkFramesBody').innerHTML = (F ? '<p class="note" style="margin:4px 0">오늘 집중: ' + esc(F.ko) + ' (' + esc(F.good) + ')</p>' : '') + framesHtml(t, false);
   $('talkFrames').open = false;
 }
 
@@ -2065,7 +2859,8 @@ function addCard(c) {
   D.cards.push({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     front: c.front || '', back: c.back, said: c.said || '', why: c.why || '', src: c.src, topicIdx: c.topicIdx,
-    stage: 0, due: addDays(t, INTERVALS[0]), created: t, last: null, done: false
+    vEn: c.vEn || '', vKo: c.vKo || '', resId: c.resId || null, grade: c.grade || null, gtype: c.gtype || null,
+    stage: 0, due: addDays(t, INTERVALS[0]), created: t, last: null, done: false, reps: 0
   });
   return true;
 }
@@ -2074,78 +2869,62 @@ function recordSession(r) {
   const m = r.meta || {};
   if (!m.date) return null;
   const turns = m.userTurns || 0;
+  const a = r.analysis;
+  const grade = a ? resGrade(r) : null;
+  const ls = m.lesson || { topicIdx: D.topicIdx, attempt: D.topicCount + 1 };
+  const focus = topicFocus(ls.topicIdx);
+  const fe = a ? focusErrCount(a, focus) : null;
   let h = D.history.find(x => x.id === m.date);
   if (!h) {
     if (turns < 1) { log('대답이 없어 기록하지 않음'); return null; }
-    const ls = m.lesson || { topicIdx: D.topicIdx, attempt: D.topicCount + 1 };
     const dt = new Date(m.date);
     h = {
       id: m.date, day: ymd(dt), time: pad(dt.getHours()) + ':' + pad(dt.getMinutes()),
       topicIdx: ls.topicIdx, attempt: ls.attempt, turns, mode: m.mode,
       counted: m.reason === '완료' || turns >= 3,
-      grammarN: 0, pronN: 0, model: null, analyzed: false, topicDone: false
+      grammarN: 0, pronN: 0, model: null, grade: null, analyzed: false, topicDone: false,
+      focus, focusErr: null, askMore: false
     };
     D.history.push(h);
     if (h.counted) {
       D.days[h.day] = true;
       if (ls.topicIdx === D.topicIdx) {
         if (D.topicCount === 0) {
-          // 이 주제 첫 대화: 준비 화면 예문을 카드로
+          // 이 주제 첫 대화: 준비 화면 예문을 카드로 (변형 예문 포함)
           const tp = TOPICS[D.topicIdx];
-          tp.frames.forEach(f => addCard({ front: f.exKo, back: f.ex, src: 'frame', topicIdx: D.topicIdx }));
+          tp.frames.forEach(f => addCard({ front: f.exKo, back: f.ex, src: 'frame', topicIdx: D.topicIdx, vEn: f.vEn, vKo: f.vKo }));
         }
         D.topicCount++;
+        D.askMore = false;
         if (D.topicCount >= PER_TOPIC) {
-          h.topicDone = true;
-          D.topicIdx = (D.topicIdx + 1) % TOPICS.length;
-          D.topicCount = 0;
-          log('주제 완료, 다음 주제로: ' + (D.topicIdx + 1));
+          // 3번째부터: 정밀 분석에서 집중 오류가 많으면 넘기지 않고 묻는다 (최대 MAX_TRIES번)
+          if (grade === 'precise' && fe >= FOCUS_HOLD && D.topicCount < MAX_TRIES) {
+            h.askMore = true; D.askMore = true;
+            log('집중 오류 ' + fe + '개: 주제 ' + (D.topicIdx + 1) + '를 한 번 더 할지 물음 (' + D.topicCount + '번 함)');
+          } else advanceTopic(h);
         }
       }
     }
   }
-  const a = r.analysis;
-  if (a && !h.analyzed) {
-    const g = (Array.isArray(a.grammar) ? a.grammar : []).slice(0, 4);
-    const p = (Array.isArray(a.pronunciation) ? a.pronunciation : []).slice(0, 5);
+  const prevGrade = h.grade || gradeOf(h.model);
+  if (a && (!h.analyzed || (prevGrade !== 'precise' && grade === 'precise'))) {
+    // 이전 임시 분석의 발음 집계는 되돌린다
+    (h.pronWords || []).forEach(w => { if (D.sounds[w]) { D.sounds[w]--; if (D.sounds[w] <= 0) delete D.sounds[w]; } });
+    const g = gList(a).filter(x => x.confidence === 'high');
+    const p = pList(a).filter(x => x.confidence === 'high');
     h.analyzed = true;
     h.model = r.analysisModel || null;
+    h.grade = grade;
     h.grammarN = g.length;
     h.pronN = p.length;
-    let added = 0;
-    g.forEach(x => { if (x && x.corrected && addCard({ front: x.meaning_ko || '', back: x.corrected, said: x.said, why: x.reason_ko, src: 'grammar', topicIdx: h.topicIdx })) added++; });
-    p.forEach(x => { const w = String((x && x.word) || '').toLowerCase().trim(); if (w) D.sounds[w] = (D.sounds[w] || 0) + 1; });
-    log('기록 반영: 고친 문장 ' + g.length + '개, 새 카드 ' + added + '장, 발음 ' + p.length + '개');
+    h.focus = focus;
+    h.focusErr = fe;
+    h.pronWords = [];
+    if (grade === 'precise') p.forEach(x => { const w = String(x.word || '').toLowerCase().trim(); if (w) { D.sounds[w] = (D.sounds[w] || 0) + 1; h.pronWords.push(w); } });
+    log('기록 반영: 등급=' + grade + ', 확실한 문법 ' + g.length + '개, 집중 오류 ' + fe + '개, 발음 ' + p.length + '개');
   }
   saveD();
   return h;
-}
-
-/* ---- 결과: 다시 말해 보기 ---- */
-let rpt = { items: [], i: 0, hasAnalysis: false };
-function startRepeat(a) {
-  rpt = { items: (a && Array.isArray(a.grammar) ? a.grammar : []).filter(x => x && x.corrected).slice(0, 3), i: 0, hasAnalysis: !!a };
-  renderRepeat();
-}
-function renderRepeat() {
-  const box = $('rptBox');
-  if (!box) return;
-  if (rpt.i < rpt.items.length) {
-    const x = rpt.items[rpt.i];
-    box.innerHTML = '<div class="note" style="margin:0">' + (rpt.i + 1) + ' / ' + rpt.items.length + '</div>' +
-      (x.meaning_ko ? '<div class="rko">' + esc(x.meaning_ko) + '</div>' : '') +
-      '<div class="en-big">' + esc(x.corrected) + '</div>' + sayButtons(x.corrected) +
-      '<p class="note">듣고 소리 내어 두 번 따라 말해 보세요.</p>' +
-      '<button type="button" id="rptNextBtn" class="primary start">따라 말했어요</button>';
-    $('rptNextBtn').addEventListener('click', () => { rpt.i++; renderRepeat(); });
-  } else {
-    let msg;
-    if (rpt.items.length) msg = '다 했어요. 이 문장들은 내일 복습 카드로 다시 나와요.';
-    else if (rpt.hasAnalysis) msg = '고칠 문장이 없었어요. 잘했어요.';
-    else msg = '분석 결과가 없어 따라 할 문장이 없어요.';
-    box.innerHTML = '<p>' + esc(msg) + '</p><button type="button" id="rptDoneBtn" class="primary start">오늘 연습 끝</button>';
-    $('rptDoneBtn').addEventListener('click', () => go('done'));
-  }
 }
 
 /* ---- 오늘 연습 끝 ---- */
@@ -2159,13 +2938,19 @@ function renderDone() {
     ['연속', streakDays() + '일']
   ];
   let topicLine;
-  if (last && last.day === t && last.topicDone) topicLine = '"' + TOPICS[last.topicIdx].ko + '" 주제를 ' + PER_TOPIC + '번 끝냈어요. 다음 주제는 "' + curTopic().ko + '"예요.';
-  else topicLine = '"' + curTopic().ko + '" 주제 ' + D.topicCount + ' / ' + PER_TOPIC + '번 했어요.';
-  $('doneBody').innerHTML = '<p>' + esc(topicLine) + '</p>' + rows.map(r => '<div class="sumrow"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '<p class="note">내일은 복습 카드부터 시작해요.</p>';
+  if (last && last.topicDone) topicLine = '"' + TOPICS[last.topicIdx].ko + '" 주제를 끝냈어요. 다음 주제는 "' + curTopic().ko + '"예요.';
+  else topicLine = '"' + curTopic().ko + '" 주제 ' + D.topicCount + '번 했어요.';
+  const qn = qLoad().filter(x => x.state !== 'temp').length;
+  $('doneBody').innerHTML = '<p>' + esc(topicLine) + '</p>' + (D.askMore ? askMoreHtml(D.history.filter(x => x.askMore).pop()) : '') +
+    rows.map(r => '<div class="sumrow"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') +
+    (qn ? '<p class="note">분석 대기 ' + qn + '건은 홈의 "지금 분석"으로 받을 수 있어요.</p>' : '') +
+    '<p class="note">내일은 복습 카드부터 시작해요.</p>';
 }
 
 /* ---- 복습 ---- */
 let rv = null;
+// 첫 복습은 원래 문장, 그 뒤로는 변형과 원래 문장을 번갈아 (변형이 없으면 원래 문장만)
+function cardUseVariant(c) { return !!(c.vEn && c.vKo) && (c.reps || 0) % 2 === 1; }
 function startReview() {
   const list = dueCards().slice(0, REVIEW_MAX);
   rv = { list, i: 0, good: 0, startedAt: Date.now() };
@@ -2176,18 +2961,22 @@ function startReview() {
 }
 function renderReviewCard() {
   const c = rv.list[rv.i];
+  rv.variant = cardUseVariant(c);
   show('rvCardBox', true); show('rvEnd', false);
   $('rvCount').textContent = '복습 ' + (rv.i + 1) + ' / ' + rv.list.length;
-  $('rvFront').textContent = c.front || ('뜻이 없는 카드예요. 이 말을 바르게 고쳐 말해 보세요: ' + (c.said || ''));
+  show('rvVar', rv.variant);
+  $('rvFront').textContent = rv.variant ? c.vKo : (c.front || ('뜻이 없는 카드예요. 이 말을 바르게 고쳐 말해 보세요: ' + (c.said || '')));
   show('rvShowBtn', true);
   show('rvBack', false);
 }
 $('rvShowBtn').addEventListener('click', () => {
   const c = rv && rv.list[rv.i];
   if (!c) return;
-  $('rvEn').textContent = c.back;
-  $('rvSay').innerHTML = sayButtons(c.back);
+  const en = rv.variant ? c.vEn : c.back;
+  $('rvEn').textContent = en;
+  $('rvSay').innerHTML = sayButtons(en);
   let more = '';
+  if (rv.variant) more += '<div>원래 문장: ' + esc(c.back) + '</div>';
   if (c.said) more += '<div class="said">내가 한 말: ' + esc(c.said) + '</div>';
   if (c.why) more += '<div>' + esc(c.why) + '</div>';
   $('rvMore').innerHTML = more;
@@ -2204,14 +2993,28 @@ function answerCard(ok) {
     else { c.stage++; c.due = addDays(t, INTERVALS[c.stage]); }
   } else { c.stage = 0; c.due = addDays(t, INTERVALS[0]); }
   c.last = t;
+  c.reps = (c.reps || 0) + 1;
   D.days[t] = true;
   saveD();
   rv.i++;
+  nextReview();
+}
+function nextReview() {
   if (rv.i >= rv.list.length || Date.now() - rv.startedAt > REVIEW_MS) renderReviewEnd();
   else renderReviewCard();
 }
 $('rvGoodBtn').addEventListener('click', () => answerCard(true));
 $('rvBadBtn').addEventListener('click', () => answerCard(false));
+$('rvDelBtn').addEventListener('click', () => {
+  const c = rv && rv.list[rv.i];
+  if (!c) return;
+  if (!confirm('이 카드를 지울까요?\n' + c.back)) return;
+  D.cards = D.cards.filter(x => x.id !== c.id);
+  saveD();
+  log('카드 지움: src=' + c.src + (c.grade ? ', ' + c.grade : ''));
+  rv.list.splice(rv.i, 1);
+  nextReview();
+});
 function renderReviewEnd() {
   show('rvCardBox', false); show('rvEnd', true);
   $('rvCount').textContent = '복습';
@@ -2224,6 +3027,361 @@ function renderReviewEnd() {
   log('복습 끝: ' + rv.i + '장 중 ' + rv.good + '장 맞음');
 }
 
+/* ===================== 실력 확인 (2주마다) ===================== */
+let CK = null;
+function doneChecks() { return D.checks.filter(c => c.status === 'done' && c.m); }
+function connTotal(c) { const k = (c.m && c.m.connectors) || {}; return ['because', 'so', 'but', 'and_then', 'when', 'other'].reduce((s, x) => s + (k[x] || 0), 0); }
+function onTopicN(c) { return ((c.m && c.m.answers) || []).filter(x => x && x.on_topic).length; }
+function accOf(c) {
+  const m = c.m;
+  const opp = m.past_opportunities + m.agreement_opportunities;
+  if (opp < 5) return null;
+  return (Math.min(m.past_correct, m.past_opportunities) + Math.min(m.agreement_correct, m.agreement_opportunities)) / opp;
+}
+function accText(c) { const a = accOf(c); const opp = c.m.past_opportunities + c.m.agreement_opportunities; return a == null ? '판정 보류 (기회 ' + opp + '번)' : Math.round(a * 100) + '%'; }
+function saidKinds(c) { const m = c.m; const k = []; if (m.uses_past) k.push('과거'); if (m.uses_future) k.push('계획'); if (m.gives_reason) k.push('이유'); return k.join(', ') || '없음'; }
+function crit4(c) {
+  const R = PROMO[c.level];
+  if (!R || !c.m) return null;
+  const m = c.m;
+  const r1 = c.speechSec >= R.sec;
+  const r2 = (R.all ? (m.uses_past && m.uses_future && m.gives_reason) : (m.uses_past || m.uses_future)) && connTotal(c) >= R.conn;
+  const r3 = onTopicN(c) >= R.onTopic;
+  const a = accOf(c);
+  const r4 = a == null ? 'hold' : a >= R.acc;
+  return { R, r: [r1, r2, r3, r4], ok: r1 && r2 && r3 && r4 === true };
+}
+function prevDoneCheck(c) { const d = doneChecks(); const i = d.findIndex(x => x.id === c.id); return i > 0 ? d[i - 1] : null; }
+function critTable(c) {
+  // c 가 없으면 기준만 보여 준다
+  const lv = c ? c.level : levelCode();
+  const R = PROMO[lv];
+  if (!R) return null;
+  const f = c ? crit4(c) : null;
+  const prev = c ? prevDoneCheck(c) : null;
+  let r5 = null, v5 = '-';
+  if (c) {
+    const pf = prev && prev.level === c.level ? crit4(prev) : null;
+    const gap = prev ? daysBetween(prev.day, c.day) : 0;
+    r5 = !!(f.ok && pf && pf.ok && gap >= CHECK_EVERY);
+    v5 = !prev ? '직전 기록 없음' : ('직전 ' + koDate(prev.day) + (pf && pf.ok ? ' 충족' : ' 미충족') + (gap < CHECK_EVERY ? ', 간격 ' + gap + '일' : ''));
+  }
+  const rows = [
+    ['힌트 없이 말한 시간 합계 ' + R.sec + '초 이상', c ? Math.round(c.speechSec) + '초' : '-', f ? f.r[0] : null],
+    [R.all ? '과거 일, 계획, 이유를 모두 말하고 잇는 말 ' + R.conn + '번 이상' : '과거 일이나 계획 중 하나를 말하고 잇는 말 ' + R.conn + '번 이상', c ? saidKinds(c) + ', 잇는 말 ' + connTotal(c) + '번' : '-', f ? f.r[1] : null],
+    ['질문 5개 중 ' + R.onTopic + '개 이상 맞게 답하기', c ? onTopicN(c) + '개' : '-', f ? f.r[2] : null],
+    ['목표 문법(과거형, 주어 동사) 정확도 ' + Math.round(R.acc * 100) + '% 이상', c ? accText(c) : '-', f ? f.r[3] : null],
+    ['위 4개를 2번 연속 충족 (' + CHECK_EVERY + '일 이상 간격)', v5, c ? r5 : null]
+  ];
+  const st = ok => ok === true ? '<span class="ok-t">충족</span>' : ok === 'hold' ? '<span class="hold-t">판정 보류</span>' : ok === false ? '<span class="no-t">아직</span>' : '-';
+  const html = '<p style="margin:0 0 4px"><b>' + esc(levelKo(lv)) + '(' + lv + ') -> ' + esc(R.toKo) + '(' + R.to + ') 진급 기준</b></p>' +
+    '<table class="cmp"><colgroup><col style="width:48%"><col style="width:32%"><col style="width:20%"></colgroup><tr><th>기준</th><th>' + (c ? koDate(c.day) : '내 기록') + '</th><th>결과</th></tr>' +
+    rows.map(x => '<tr><td>' + esc(x[0]) + '</td><td>' + esc(x[1]) + '</td><td>' + st(x[2]) + '</td></tr>').join('') + '</table>' +
+    '<p class="note">공식 시험 등급이 아니라 이 앱 안의 기준이에요.</p>';
+  return { html, all: !!(f && f.ok && r5), R };
+}
+function checkDue() {
+  const d = doneChecks();
+  if (!d.length) return { due: true, last: null };
+  const last = d[d.length - 1];
+  return { due: daysBetween(last.day, todayStr()) >= CHECK_EVERY, last };
+}
+function renderCheckCard() {
+  const cd = checkDue();
+  const pend = D.checks.filter(c => c.status === 'pending' && qGet(c.id)).length;
+  let h;
+  if (!cd.last) h = '<p style="margin:0"><b>처음 한 번 해 보세요.</b> 지금 실력을 기준으로 남겨 두고, 2주마다 비교해요. (약 5분)</p>';
+  else if (cd.due) h = '<p style="margin:0"><b>할 때가 됐어요.</b> 지난번은 ' + esc(koDate(cd.last.day)) + '이었어요.</p>';
+  else h = '<p style="margin:0">지난번은 ' + esc(koDate(cd.last.day)) + '. 다음은 ' + esc(koDate(addDays(cd.last.day, CHECK_EVERY))) + '부터예요. 언제든 할 수 있어요.</p>';
+  if (pend) h += '<p class="note">분석을 기다리는 실력 확인이 ' + pend + '건 있어요.</p>';
+  $('checkInfo').innerHTML = h;
+  show('checkLastBtn', !!cd.last);
+}
+$('checkStartBtn').addEventListener('click', () => startCheck());
+$('checkLastBtn').addEventListener('click', () => { const cd = checkDue(); if (cd.last) showCheckResult(cd.last.id); });
+
+function startCheck() {
+  const set = D.checks.length % CHECK_SETS.length;
+  CK = { state: 'intro', set, qs: CHECK_SETS[set], i: 0, ans: [], sub: 'ready', err: '', rec: null, tick: null };
+  go('check');
+  renderCheck();
+}
+function renderCheck() {
+  const b = $('ckBody');
+  show('ckAudio', false);
+  if (!CK) { b.innerHTML = ''; return; }
+  if (CK.state === 'intro') {
+    const key = !!getKey();
+    b.innerHTML = '<h2 class="ttl">실력 확인</h2><p>질문 5개에 힌트 없이 답해요. 질문마다 최대 ' + CHECK_MAX_SEC + '초예요.</p><p>틀려도 괜찮아요. 아는 만큼 길게 말해 보세요. 2주마다 하면 얼마나 늘었는지 비교해 줘요.</p>' +
+      (key ? '' : '<p class="err">API 키가 없어요. 먼저 설정에서 넣어 주세요.</p>') +
+      '<button type="button" id="ckGoBtn" class="primary start"' + (key ? '' : ' disabled') + '>시작</button><button type="button" data-go="home" class="wide" style="margin-top:8px">홈으로</button>';
+    const g = $('ckGoBtn');
+    if (g) g.addEventListener('click', () => { CK.state = 'q'; CK.i = 0; CK.sub = 'ready'; renderCheck(); sayText(CK.qs[0].en, 0.85); });
+    return;
+  }
+  if (CK.state === 'q') {
+    const q = CK.qs[CK.i];
+    const a = CK.ans[CK.i];
+    const last = CK.i === CK.qs.length - 1;
+    let h = '<div class="note" style="margin:0">질문 ' + (CK.i + 1) + ' / ' + CK.qs.length + '</div><div class="en-big">' + esc(q.en) + '</div><div class="rko">' + esc(q.ko) + '</div>' +
+      '<div><button type="button" class="say" data-say="' + esc(q.en) + '" data-rate="0.85">질문 듣기</button></div>';
+    if (CK.sub === 'starting') h += '<button type="button" class="primary start" disabled style="margin-top:12px">마이크 켜는 중</button>';
+    else if (CK.sub === 'rec') h += '<button type="button" id="ckRecBtn" class="primary start rec" style="margin-top:12px">다 말했어요 (<span id="ckLeft">' + CHECK_MAX_SEC + '</span>초)</button>';
+    else if (a) h += '<p>녹음했어요. ' + Math.round(a.sec) + '초 중 말한 시간 ' + Math.round(a.speechSec) + '초.</p><div class="btnrow"><button type="button" id="ckRedoBtn">다시 말하기</button><button type="button" id="ckNextBtn" class="primary">' + (last ? '다 했어요' : '다음 질문') + '</button></div>';
+    else h += '<p class="note">질문을 듣고 말하기를 누른 뒤 영어로 답하세요. 다 말하면 한 번 더 누르세요.</p><button type="button" id="ckRecBtn" class="primary start">말하기</button>';
+    if (CK.err) h += '<p class="err">' + esc(CK.err) + '</p>';
+    h += '<button type="button" id="ckQuitBtn" class="wide" style="margin-top:12px">그만하기</button>';
+    b.innerHTML = h;
+    const rb = $('ckRecBtn');
+    if (rb) rb.addEventListener('click', () => { if (CK.sub === 'rec') ckRecStop(); else ckRecStart(); });
+    const rd = $('ckRedoBtn');
+    if (rd) rd.addEventListener('click', () => { CK.ans[CK.i] = null; ckRecStart(); });
+    const nb = $('ckNextBtn');
+    if (nb) nb.addEventListener('click', () => {
+      if (last) { ckFinish(); return; }
+      CK.i++; CK.sub = 'ready'; CK.err = ''; renderCheck(); sayText(CK.qs[CK.i].en, 0.85);
+    });
+    $('ckQuitBtn').addEventListener('click', () => {
+      if (!confirm('실력 확인을 그만할까요? 지금까지 말한 것은 저장하지 않아요.')) return;
+      if (CK.rec) { const r = CK.rec; CK.rec = null; recEnd(r); }
+      clearInterval(CK.tick); CK = null; go('home');
+    });
+    return;
+  }
+  if (CK.state === 'analyzing') { b.innerHTML = '<h2 class="ttl">분석 중</h2><p id="ckMsg">정밀 분석 중이에요. 1분쯤 걸릴 수 있어요.</p>'; return; }
+  if (CK.state === 'failed') {
+    b.innerHTML = '<h2 class="ttl">분석을 못 했어요</h2><p class="err">' + esc(CK.failNote || '') + '</p><p>홈의 "지금 분석"에서 다시 받을 수 있어요. 실력 확인은 정밀 분석으로만 판정해요.</p><button type="button" data-go="home" class="primary start">홈으로</button>';
+  }
+}
+function ckRecStart() {
+  CK.err = '';
+  let rec;
+  try {
+    rec = recBegin(CHECK_MAX_SEC, {
+      onAuto: () => ckRecStop(),
+      onCancel: () => { if (CK && CK.rec === rec) { CK.rec = null; clearInterval(CK.tick); CK.sub = 'ready'; CK.err = '녹음이 멈췄어요. 다시 눌러 주세요.'; if (curScreen === 'check') renderCheck(); } }
+    });
+  } catch (e) { log('녹음 시작 실패: ' + e.message, 'WARN'); CK.err = '마이크를 켤 수 없어요.'; renderCheck(); return; }
+  const mine = CK;
+  mine.rec = rec; mine.sub = 'starting'; renderCheck();
+  rec.ready.then(() => {
+    if (CK !== mine || mine.rec !== rec || rec.stopped) return;
+    mine.sub = 'rec'; renderCheck();
+    clearInterval(mine.tick);
+    mine.tick = setInterval(() => { const el = $('ckLeft'); if (el && rec.recT0) el.textContent = String(Math.max(0, Math.ceil(CHECK_MAX_SEC - (performance.now() - rec.recT0) / 1000))); }, 250);
+  }).catch(async e => {
+    log('마이크 실패: ' + (e && (e.name + ': ' + e.message)), 'WARN');
+    if (mine.rec === rec) mine.rec = null;
+    await recEnd(rec);
+    if (CK !== mine) return;
+    mine.sub = 'ready';
+    mine.err = e && e.name === 'NotAllowedError' ? '마이크 권한이 꺼져 있어요. 브라우저 설정에서 허용해 주세요.' : '마이크를 켤 수 없어요.';
+    renderCheck();
+  });
+}
+async function ckRecStop() {
+  const mine = CK;
+  const rec = mine && mine.rec;
+  if (!rec) return;
+  mine.rec = null; clearInterval(mine.tick);
+  const r = await recEnd(rec);
+  if (CK !== mine) return;
+  if (r.sec < 0.5) { mine.sub = 'ready'; mine.err = '너무 짧아요. 다시 말해 주세요.'; renderCheck(); return; }
+  mine.ans[mine.i] = { pcm: r.pcm, sec: r.sec, speechSec: r.speechSec };
+  mine.sub = 'done';
+  renderCheck();
+}
+async function ckFinish() {
+  const mine = CK;
+  const gap = new Int16Array(TARGET_RATE);   // 답 사이 1초 쉼
+  const parts = [], times = [];
+  let pos = 0;
+  mine.ans.forEach((a, i) => {
+    if (i) { parts.push(gap); pos += gap.length; }
+    const st = pos / TARGET_RATE;
+    parts.push(a.pcm); pos += a.pcm.length;
+    times.push([+st.toFixed(1), +(pos / TARGET_RATE).toFixed(1)]);
+  });
+  const pcm = concatInt16(parts);
+  const created = new Date().toISOString();
+  let id = created;
+  for (let k = 2; D.checks.some(c => c.id === id); k++) id = created + '_' + k;   // 같은 시각 겹침 방지
+  const chk = {
+    id, day: todayStr(), set: mine.set, level: levelCode(),
+    speechSec: Math.round(mine.ans.reduce((s, a) => s + a.speechSec, 0) * 10) / 10,
+    recSec: Math.round(mine.ans.reduce((s, a) => s + a.sec, 0) * 10) / 10,
+    ans: mine.ans.map(a => Math.round(a.sec * 10) / 10), times, status: 'pending', m: null, model: null, hasAudio: false
+  };
+  D.checks.push(chk); saveD();
+  log('실력 확인 녹음 끝: 말한 시간 ' + chk.speechSec + '초, 녹음 ' + chk.recSec + '초');
+  await qAdd({ id, kind: 'check', state: 'pending', created }, { pcm, chk });
+  mine.state = 'analyzing'; renderCheck();
+  try {
+    const r = await analyzeCheck(pcm, chk, t => { const el = $('ckMsg'); if (el) el.textContent = t; });
+    await applyCheck(chk, r, pcm);
+    qRemove(id);
+    if (curScreen === 'check' && CK === mine) showCheckResult(id);
+    else if (curScreen === 'home') renderHome();
+  } catch (e) {
+    log('실력 확인 분석 실패: ' + e.message, 'ERR');
+    mine.state = 'failed'; mine.failNote = failNote(e);
+    if (curScreen === 'check' && CK === mine) renderCheck();
+  }
+}
+async function analyzeCheck(pcm, chk, onStatus) {
+  const qs = CHECK_SETS[chk.set] || CHECK_SETS[0];
+  const wav = encodeWav(pcm, TARGET_RATE);
+  log('실력 확인 WAV ' + (wav.length / 1024 / 1024).toFixed(2) + 'MB, ' + (pcm.length / TARGET_RATE).toFixed(1) + '초');
+  const times = Array.isArray(chk.times) ? chk.times : [];
+  const prompt = [
+    'You are an English speaking examiner for a Korean adult learner (current app level: CEFR ' + (LEVEL_RULES[chk.level] ? chk.level : 'A2') + ').',
+    'The attached audio has the learner\'s answers to 5 questions, in this order, with about 1 second of silence between answers. The learner saw no hints.',
+    ...qs.map((q, i) => 'Answer ' + (i + 1) + (times[i] ? ' (about ' + times[i][0] + 's to ' + times[i][1] + 's)' : '') + ': question "' + q.en + '"'),
+    'Judge only the speech you actually hear. Do not give credit for words you did not hear. Korean words and fillers (um, uh) are not English words.',
+    'Return JSON with:',
+    '- "answers": exactly 5 objects in order. "on_topic" = true if the learner really answered that question in English (mistakes are fine), false if silent, off topic, or only one or two unrelated words.',
+    '- "words": the total number of English words the learner said.',
+    '- "avg_sentence_words": the average number of words per sentence or utterance.',
+    '- "past_opportunities": how many verbs needed the past tense (finished past events). "past_correct": how many of those used a correct past form.',
+    '- "agreement_opportunities": how many verbs needed subject-verb agreement (he, she, it, or one person + present verb; am, is, are, was, were). "agreement_correct": how many of those were correct.',
+    '- "connectors": how many times the learner used each: "because", "so", "but", "and_then" (and then), "when", "other" (other joining words like if, after, before).',
+    '- "uses_past": true if the learner talked about a past event with at least one correct past form. "uses_future": true if the learner talked about a plan with going to, will, or a present form for the future. "gives_reason": true if the learner gave a reason (because, so, or similar).',
+    '- "cefr_estimate": A1, A2, or B1, based only on this speech.',
+    '- "summary_ko": two short sentences in Korean about this speaking. "next_tip_ko": one short sentence in Korean: the single most useful thing to practice next.',
+    'Korean writing rules: short sentences, polite style, no emoji, no em dash, no middle dot.'
+  ].join('\n');
+  const int = { type: 'integer' };
+  const schema = {
+    type: 'object',
+    properties: {
+      answers: { type: 'array', items: { type: 'object', properties: { on_topic: { type: 'boolean' } }, required: ['on_topic'] } },
+      words: int, avg_sentence_words: { type: 'number' },
+      past_opportunities: int, past_correct: int, agreement_opportunities: int, agreement_correct: int,
+      connectors: { type: 'object', properties: { because: int, so: int, but: int, and_then: int, when: int, other: int }, required: ['because', 'so', 'but', 'and_then', 'when', 'other'] },
+      uses_past: { type: 'boolean' }, uses_future: { type: 'boolean' }, gives_reason: { type: 'boolean' },
+      cefr_estimate: { type: 'string', enum: ['A1', 'A2', 'B1'] },
+      summary_ko: { type: 'string' }, next_tip_ko: { type: 'string' }
+    },
+    required: ['answers', 'words', 'avg_sentence_words', 'past_opportunities', 'past_correct', 'agreement_opportunities', 'agreement_correct', 'connectors', 'uses_past', 'uses_future', 'gives_reason', 'cefr_estimate', 'summary_ko', 'next_tip_ko']
+  };
+  // 실력 확인은 정밀 모델로만 판정 (다 실패하면 대기열에 남는다)
+  return runChain(PRECISE_CHAIN, (model, lv) => audioBody(model, lv, prompt, wav, schema), onStatus);
+}
+function normCheckM(j) {
+  const n = v => { const x = Math.round(Number(v)); return isFinite(x) && x > 0 ? x : 0; };
+  const k = (j && j.connectors) || {};
+  const ans = (Array.isArray(j && j.answers) ? j.answers : []).slice(0, 5).map(a => ({ on_topic: !!(a && a.on_topic === true) }));
+  while (ans.length < 5) ans.push({ on_topic: false });
+  return {
+    answers: ans, words: n(j.words), avg_sentence_words: Math.max(0, Number(j.avg_sentence_words) || 0),
+    past_opportunities: n(j.past_opportunities), past_correct: n(j.past_correct),
+    agreement_opportunities: n(j.agreement_opportunities), agreement_correct: n(j.agreement_correct),
+    connectors: { because: n(k.because), so: n(k.so), but: n(k.but), and_then: n(k.and_then), when: n(k.when), other: n(k.other) },
+    uses_past: j.uses_past === true, uses_future: j.uses_future === true, gives_reason: j.gives_reason === true,
+    cefr_estimate: ['A1', 'A2', 'B1'].includes(j.cefr_estimate) ? j.cefr_estimate : '-',
+    summary_ko: String(j.summary_ko || ''), next_tip_ko: String(j.next_tip_ko || '')
+  };
+}
+async function applyCheck(chkLike, r, pcm) {
+  let c = D.checks.find(x => x.id === chkLike.id);
+  if (!c) { c = Object.assign({}, chkLike); D.checks.push(c); D.checks.sort((a, b) => (a.id < b.id ? -1 : 1)); }
+  c.m = normCheckM(r.json || {});
+  c.model = r.model; c.status = 'done';
+  saveD();
+  c.hasAudio = await idbSet('ca:' + c.id, { pcm });
+  // 녹음은 기준선(첫 회) 1개 + 최근 2개만 남긴다
+  const d = doneChecks();
+  const keep = new Set([d[0] && d[0].id].concat(d.slice(-2).map(x => x.id)));
+  d.forEach(x => { if (x.hasAudio && !keep.has(x.id)) { idbDel('ca:' + x.id); x.hasAudio = false; } });
+  saveD();
+  log('실력 확인 결과 반영: ' + c.id + ', 말한 시간 ' + c.speechSec + '초, 추정 ' + c.m.cefr_estimate);
+}
+function showCheckResult(id) {
+  const c = D.checks.find(x => x.id === id && x.status === 'done' && x.m);
+  if (!c) return;
+  if (CK && CK.rec) { const r = CK.rec; CK.rec = null; recEnd(r); }
+  CK = { state: 'result', id };
+  go('check');
+  renderCheckResult(c);
+}
+function renderCheckResult(c) {
+  const d = doneChecks();
+  const base = d[0];
+  const prev = prevDoneCheck(c);
+  const cols = [];
+  if (base && base.id !== c.id) cols.push(['처음', base]);
+  if (prev && prev.id !== c.id && (!base || prev.id !== base.id)) cols.push(['직전', prev]);
+  cols.push(['이번', c]);
+  const rows = [
+    ['말한 시간', x => Math.round(x.speechSec) + '초'],
+    ['단어 수', x => x.m.words + '개'],
+    ['문장 평균 단어', x => x.m.avg_sentence_words.toFixed(1)],
+    ['과거형 맞게', x => x.m.past_correct + ' / ' + x.m.past_opportunities],
+    ['주어 동사 맞게', x => x.m.agreement_correct + ' / ' + x.m.agreement_opportunities],
+    ['목표 문법 정확도', x => accText(x)],
+    ['잇는 말', x => connTotal(x) + '번'],
+    ['맞게 답한 질문', x => onTopicN(x) + ' / 5'],
+    ['말한 내용', x => saidKinds(x)],
+    ['추정 수준', x => x.m.cefr_estimate]
+  ];
+  let h = '<h2 class="ttl">실력 확인 결과</h2><div class="note" style="margin:0 0 6px">' + esc(koDate(c.day)) + ', ' + esc(levelKo(c.level)) + '(' + esc(c.level) + ')</div>' + badgeHtml('precise');
+  if (c.m.summary_ko) h += '<p>' + esc(c.m.summary_ko) + '</p>';
+  if (c.m.next_tip_ko) h += '<p class="tip">다음 연습: ' + esc(c.m.next_tip_ko) + '</p>';
+  h += '<h3 style="font-size:15px;margin:14px 0 6px">비교</h3><table class="cmp"><colgroup><col style="width:' + (cols.length > 2 ? 31 : 40) + '%"></colgroup><tr><th></th>' +
+    cols.map(x => '<th>' + esc(x[0]) + '<br>' + esc(koDate(x[1].day)) + '</th>').join('') + '</tr>' +
+    rows.map(r => '<tr><td>' + esc(r[0]) + '</td>' + cols.map(x => '<td>' + esc(r[1](x[1])) + '</td>').join('') + '</tr>').join('') + '</table>';
+  h += '<div class="btnrow">' + (base && base.id !== c.id && base.hasAudio ? '<button type="button" data-ckplay="' + esc(base.id) + '">처음 녹음 듣기</button>' : '') +
+    (c.hasAudio ? '<button type="button" data-ckplay="' + esc(c.id) + '">이번 녹음 듣기</button>' : '') + '</div>';
+  const ct = critTable(c);
+  h += '<h3 style="font-size:15px;margin:16px 0 6px">진급 기준</h3>';
+  if (ct) {
+    h += ct.html;
+    const latest = d[d.length - 1];
+    if (ct.all && latest && latest.id === c.id && D.profile.level === c.level) h += '<button type="button" id="promoBtn" class="primary start">' + esc(ct.R.toKo) + '으로 올릴까요?</button>';
+  } else h += '<p class="note">중급 사용자는 진급 표 대신 지표가 어떻게 바뀌는지만 보여 줘요.</p>';
+  h += '<button type="button" data-go="home" class="wide" style="margin-top:12px">홈으로</button>';
+  $('ckBody').innerHTML = h;
+  const pb = $('promoBtn');
+  if (pb) pb.addEventListener('click', () => {
+    if (!confirm('수준을 ' + ct.R.toKo + '(' + ct.R.to + ')으로 바꿀까요? 대화와 분석이 그 수준에 맞게 바뀌어요. 설정에서 다시 바꿀 수 있어요.')) return;
+    D.promotions.push({ day: todayStr(), from: D.profile.level, to: ct.R.to, check: c.id });
+    D.profile.level = ct.R.to;
+    saveD();
+    log('진급: ' + c.level + ' -> ' + ct.R.to);
+    pb.outerHTML = '<p class="okmsg">' + esc(ct.R.toKo) + '으로 바꿨어요.</p>';
+  });
+}
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest && ev.target.closest('[data-ckplay]');
+  if (!b) return;
+  const v = await idbGet('ca:' + b.getAttribute('data-ckplay'));
+  if (!v || !v.pcm) { flash(b, '녹음이 없어요'); return; }
+  try {
+    const au = $('ckAudio');
+    if (au.src) { try { URL.revokeObjectURL(au.src); } catch (e) {} }
+    au.src = URL.createObjectURL(new Blob([encodeWav(v.pcm, TARGET_RATE)], { type: 'audio/wav' }));
+    show('ckAudio', true);
+    au.play().catch(() => {});
+  } catch (e) { log('녹음 재생 실패: ' + e.message, 'WARN'); }
+});
+
+/* ---- 안내 ---- */
+function renderGuide() {
+  const lv = levelCode();
+  const d = doneChecks().filter(c => c.level === lv);
+  const c = d[d.length - 1] || null;
+  const ct = critTable(c);
+  let h = '<p>지금 수준: <b>' + esc(levelKo(lv)) + '(' + lv + ')</b></p>';
+  if (ct) {
+    if (!c) h += '<p class="note">아직 이 수준에서 실력 확인을 하지 않았어요. 홈의 "실력 확인"으로 시작해요.</p>';
+    h += ct.html;
+    h += '<p class="note">기준을 모두 채우면 결과 화면에서 올릴지 물어봐요. 자동으로 바뀌지 않아요.</p>';
+  } else h += '<p>중급(B1)은 진급 표 대신 실력 확인 지표가 어떻게 바뀌는지만 보여 줘요.</p>';
+  $('guidePromo').innerHTML = h;
+  const u = D.usage && D.usage.day === todayStr() ? D.usage : { precise: 0, temp: 0, verify: 0 };
+  $('guideUsage').textContent = '오늘 이 기기에서 받은 것: 정밀 분석 ' + (u.precise || 0) + '번, 임시 분석 ' + (u.temp || 0) + '번, 다시 말하기 확인 ' + (u.verify || 0) + '번.';
+}
+
 /* ---- 기록 ---- */
 function renderHistory() {
   const active = D.cards.filter(c => !c.done).length;
@@ -2233,9 +3391,14 @@ function renderHistory() {
     ['연습한 날', Object.keys(D.days).length + '일'],
     ['연속', streakDays() + '일'],
     ['대화', talks + '번'],
-    ['복습 카드', '공부 중 ' + active + '장, 졸업 ' + grad + '장']
+    ['복습 카드', '공부 중 ' + active + '장, 졸업 ' + grad + '장'],
+    ['이상하다고 표시한 교정', D.rejected.length + '개']
   ].map(r => '<div class="sumrow"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('');
   show('lastResultBtn', !!storedResult);
+  const ck = D.checks.filter(c => c.status === 'done' && c.m).slice().reverse();
+  $('histChecks').innerHTML = ck.length
+    ? ck.map(c => '<div class="sumrow"><span>' + esc(koDate(c.day)) + ' ' + esc(c.level) + ', 말한 시간 ' + Math.round(c.speechSec) + '초</span><button type="button" class="small" data-ckshow="' + esc(c.id) + '">보기</button></div>').join('')
+    : '<p class="empty">아직 없어요. 홈의 "실력 확인"으로 시작해요.</p>';
   const top = Object.keys(D.sounds).map(w => [w, D.sounds[w]]).sort((a, b) => b[1] - a[1]).slice(0, 5);
   $('histSounds').innerHTML = top.length
     ? top.map(x => '<div class="sumrow"><span>' + esc(x[0]) + ' ' + sayButtons(x[0]) + '</span><b>' + x[1] + '번</b></div>').join('')
@@ -2243,11 +3406,19 @@ function renderHistory() {
   const list = D.history.slice().reverse();
   $('histList').innerHTML = list.length ? list.map(h => {
     const tp = TOPICS[h.topicIdx] ? TOPICS[h.topicIdx].ko : '?';
+    const g = h.grade || gradeOf(h.model);
     return '<div class="hist"><b>' + esc(koDate(h.day)) + ' ' + esc(h.time || '') + '</b> ' + esc(tp) + ' ' + esc(h.attempt) + '번째' + (h.counted ? '' : ' (짧게 끝남)') +
-      '<div class="note" style="margin:2px 0 0">대답 ' + esc(h.turns) + '번, 고친 문장 ' + esc(h.grammarN) + '개, 발음 지적 ' + esc(h.pronN) + '개' + (h.model ? ', ' + esc(h.model) : (h.analyzed ? '' : ', 분석 없음')) + '</div></div>';
+      '<div class="note" style="margin:2px 0 0">대답 ' + esc(h.turns) + '번, 고친 문장 ' + esc(h.grammarN) + '개, 발음 지적 ' + esc(h.pronN) + '개' +
+      (h.focusErr != null ? ', 집중 오류 ' + esc(h.focusErr) + '개' : '') +
+      (h.analyzed ? (g === 'precise' ? ', 정밀 분석' : ', 임시 분석') : ', 분석 없음') +
+      (h.rptN ? ', 다시 말하기 ' + esc(h.rptOk || 0) + ' / ' + esc(h.rptN) : '') + '</div></div>';
   }).join('') : '<p class="empty">아직 기록이 없어요.</p>';
   $('importMsg').textContent = '';
 }
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('[data-ckshow]');
+  if (b) showCheckResult(b.getAttribute('data-ckshow'));
+});
 $('lastResultBtn').addEventListener('click', () => { if (storedResult) showResult(storedResult, true); });
 function exportText() { return JSON.stringify({ app: 'ec', version: APP_VERSION, exported: new Date().toISOString(), data: D }); }
 $('exportFileBtn').addEventListener('click', () => {
@@ -2270,6 +3441,7 @@ function importFrom(text) {
   const d = normD(o && o.data ? o.data : o);
   if (!d) { $('importMsg').textContent = '기록 형식이 아니에요.'; return; }
   if (!confirm('지금 이 기기의 기록을 가져온 기록으로 바꿀까요? (카드 ' + d.cards.length + '장, 대화 ' + d.history.length + '번)')) return;
+  d.introSeen = true;
   D = d; saveD();
   log('기록 가져옴: 카드 ' + d.cards.length + '장, 대화 ' + d.history.length + '번');
   renderHistory();
@@ -2306,23 +3478,45 @@ $('setSaveBtn').addEventListener('click', () => {
 checkEnv();
 refreshKeyUI();
 D = loadD();
-go(D ? 'home' : 'profile');
-(async () => {
-  try {
-    const saved = localStorage.getItem(LS_RESULT);
-    if (saved) {
-      const res = JSON.parse(saved);
-      if (!res.analysis) {
-        const inp = await idbGet('lastInput');
-        if (inp && inp.meta && res.meta && inp.meta.date === res.meta.date) lastAnalysisInput = inp;
+try {
+  const saved = localStorage.getItem(LS_RESULT);
+  if (saved) {
+    const res = JSON.parse(saved);
+    if (res && res.meta) {
+      // 0.2.1 결과: 카드는 이미 자동으로 만들어졌으므로 저장된 것으로 본다
+      if (res.analysis && !Array.isArray(res.sel)) {
+        res.committed = true;
+        if (D) {
+          const keys = gList(res.analysis).map(x => normSent(x.corrected));
+          let tagged = 0;
+          D.cards.forEach(c => { if (c.src === 'grammar' && !c.resId && keys.includes(normSent(c.back))) { c.resId = res.meta.date; tagged++; } });
+          if (tagged) { saveD(); log('0.2.1 카드 ' + tagged + '장에 지난 결과 표시를 붙임'); }
+        }
       }
-      // 0.2.0: 지난 결과는 바로 띄우지 않고 홈(분석 안 된 경우)과 기록 화면에서 연다
+      if (res.analysis && !res.grade) res.grade = gradeOf(res.analysisModel);
       storedResult = res;
-      if (!lastResult) lastResult = res;
+      lastResult = res;
+    }
+  }
+} catch (e) { log('지난 결과 읽기 실패: ' + e.message, 'WARN'); }
+if (D) saveD();   // 마이그레이션 결과 저장 (없는 필드는 기본값)
+go(D ? (D.introSeen ? 'home' : 'intro') : 'profile');
+(async () => {
+  // 0.2.1 의 'lastInput' 1건을 대기열로 옮긴다
+  try {
+    const inp = await idbGet('lastInput');
+    if (inp && inp.pcm && inp.meta && inp.meta.date) {
+      const r = storedResult;
+      const same = r && r.meta && r.meta.date === inp.meta.date;
+      const lsn = inp.meta.lesson || {};
+      if (same && !r.analysis) await qAdd({ id: inp.meta.date, kind: 'talk', state: 'pending', created: inp.meta.date, topicIdx: lsn.topicIdx }, inp);
+      else if (same && r.analysis && gradeOf(r.analysisModel) === 'temp') await qAdd({ id: inp.meta.date, kind: 'talk', state: 'temp', created: inp.meta.date, topicIdx: lsn.topicIdx }, inp);
+      await idbDel('lastInput');
+      log('0.2.1 녹음 보관 정리 (' + (same ? (r.analysis ? '결과 있음, 등급=' + gradeOf(r.analysisModel) : '분석 대기로 옮김') : '결과와 다름, 지움') + ')');
       if (curScreen === 'home') renderHome();
     }
-  } catch (e) { log('지난 결과 읽기 실패: ' + e.message, 'WARN'); }
-  log('준비 완료 (학습 기록 ' + (D ? '있음, 주제 ' + (D.topicIdx + 1) + ', 카드 ' + D.cards.length + '장' : '없음, 처음 실행') + ')');
+  } catch (e) { log('지난 녹음 옮기기 실패: ' + e.message, 'WARN'); }
+  log('준비 완료 (학습 기록 ' + (D ? '있음, 주제 ' + (D.topicIdx + 1) + ', 카드 ' + D.cards.length + '장, 실력 확인 ' + D.checks.length + '번' : '없음, 처음 실행') + ', 분석 대기 ' + qLoad().length + '건)');
 })();
 </script>
 </body>
