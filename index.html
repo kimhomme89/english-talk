@@ -241,7 +241,7 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.1.5 (2026-11-24)';
+const APP_VERSION = '0.1.6 (2026-11-24)';
 let TURNS = 3;                           // 학습자가 답하는 횟수 (화면에서 고름)
 const API_BASE = 'https://generativelanguage.googleapis.com';
 const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
@@ -266,6 +266,7 @@ const tutorPrompt = () => [
   'You are a friendly English conversation tutor.',
   'The learner is Korean, CEFR level A2 (beginner).',
   'RESPOND IN ENGLISH. YOU MUST RESPOND UNMISTAKABLY IN ENGLISH, even if the learner speaks Korean.',
+  'RESCUE RULE: when the learner says something in Korean, or gets stuck and mixes Korean words in, they need help. Then do exactly this: say "You can say:" and give the natural English sentence for what they meant, slowly, in simple words (10 words or fewer). Then say "Try it." and wait. After they repeat it, say "Good!" and continue with the next question. A rescue does not count as one of the answers.',
   'Speak slowly and clearly, with simple words.',
   'Ask only ONE short question at a time (12 words or fewer).',
   'Do NOT correct the learner\'s mistakes during the conversation.',
@@ -832,8 +833,8 @@ function startLive(s) {
             silenceDurationMs: VAD_SILENCE_MS
           }
         },
-        inputAudioTranscription: langHintOk() ? { languageCodes: ['en-US'] } : {},
-        outputAudioTranscription: langHintOk() ? { languageCodes: ['en-US'] } : {}
+        inputAudioTranscription: langHintOk() ? { languageCodes: ['en-US', 'ko-KR'] } : {},
+        outputAudioTranscription: langHintOk() ? { languageCodes: ['en-US', 'ko-KR'] } : {}
       }
     };
     ws.send(JSON.stringify(setup));
