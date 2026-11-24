@@ -188,6 +188,12 @@
         <span>버튼을 눌러 말하고, 다시 눌러 보냅니다. AI 답은 기기 음성으로 읽습니다.</span>
       </div>
     </label>
+    <div style="margin:10px 0 4px;font-weight:600;">대화 길이</div>
+    <select id="lenSel" style="width:100%;padding:10px;font-size:15px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;">
+      <option value="3">짧게: 3번 대답 (약 1분)</option>
+      <option value="8">보통: 8번 대답 (약 3분)</option>
+      <option value="20">길게: 20번 대답 (약 8분)</option>
+    </select>
     <button id="startBtn" type="button" class="primary start">대화 시작</button>
     <div id="startErr" class="err hidden"></div>
   </section>
@@ -235,8 +241,8 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.1.3 (2026-11-24)';
-const TURNS = 3;                         // 학습자가 답하는 횟수
+const APP_VERSION = '0.1.4 (2026-11-24)';
+let TURNS = 3;                           // 학습자가 답하는 횟수 (화면에서 고름)
 const API_BASE = 'https://generativelanguage.googleapis.com';
 const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
 const API_REVISION = '2026-05-20';
@@ -256,7 +262,7 @@ const MAX_SESSION_MS = 6 * 60 * 1000;
 const LS_KEY = 'ec_gemini_key';
 const LS_RESULT = 'ec_last_result';
 
-const TUTOR_PROMPT = [
+const tutorPrompt = () => [
   'You are a friendly English conversation tutor.',
   'The learner is Korean, CEFR level A2 (beginner).',
   'RESPOND IN ENGLISH. YOU MUST RESPOND UNMISTAKABLY IN ENGLISH, even if the learner speaks Korean.',
@@ -819,7 +825,7 @@ function startLive(s) {
       setup: {
         model: 'models/' + model,
         generationConfig: { responseModalities: ['AUDIO'] },
-        systemInstruction: { parts: [{ text: TUTOR_PROMPT }] },
+        systemInstruction: { parts: [{ text: tutorPrompt() }] },
         realtimeInputConfig: {
           automaticActivityDetection: {
             endOfSpeechSensitivity: 'END_SENSITIVITY_LOW',
@@ -1047,7 +1053,7 @@ async function sendTurn(s) {
   ].join('\n');
   const body = {
     model: TURN_MODEL,
-    system_instruction: TUTOR_PROMPT,
+    system_instruction: tutorPrompt(),
     input: [
       { type: 'text', text: instr },
       { type: 'audio', data: bytesToBase64(wav), mime_type: 'audio/wav' }
@@ -1466,6 +1472,20 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 window.addEventListener('pagehide', () => { if (S && !S.ended) { log('pagehide'); finishConversation('페이지 닫힘'); } });
+
+/* ===================== 대화 길이 ===================== */
+(() => {
+  const sel = $('lenSel');
+  let saved = 3;
+  try { saved = parseInt(localStorage.getItem('ec_turns') || '3', 10) || 3; } catch (e) {}
+  if (![3, 8, 20].includes(saved)) saved = 3;
+  TURNS = saved; sel.value = String(saved);
+  sel.addEventListener('change', () => {
+    TURNS = parseInt(sel.value, 10) || 3;
+    try { localStorage.setItem('ec_turns', String(TURNS)); } catch (e) {}
+    log('대화 길이 변경: ' + TURNS + '번 대답');
+  });
+})();
 
 /* ===================== 초기화 ===================== */
 checkEnv();
