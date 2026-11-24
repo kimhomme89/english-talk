@@ -126,6 +126,9 @@
   .fixed { font-weight: 600; }
   .say { display: inline-block; margin: 4px 6px 2px 0; padding: 5px 12px; font-size: 13px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: inherit; cursor: pointer; }
   .say:active { opacity: .6; }
+  .minRow { display: flex; gap: 8px; margin-bottom: 12px; }
+  .minBtn { flex: 1; padding: 12px 0; font-size: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: inherit; cursor: pointer; }
+  .minBtn.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
   .why { color: var(--muted); font-size: 14px; }
   .empty { color: var(--muted); font-size: 14px; }
   .timing { font-size: 14px; color: var(--muted); }
@@ -262,7 +265,9 @@
         <p class="err">API 키가 없어요. 먼저 설정에서 넣어 주세요.</p>
         <button type="button" data-go="settings" class="wide">설정으로 가기</button>
       </div>
-      <button id="startBtn" type="button" class="primary start" style="margin-top:12px">대화 시작</button>
+      <div style="margin:12px 0 6px;font-weight:600;">대화 시간</div>
+    <div class="minRow"><button type="button" class="minBtn" data-min="3">3분</button><button type="button" class="minBtn" data-min="5">5분</button><button type="button" class="minBtn" data-min="10">10분</button></div>
+    <button id="startBtn" type="button" class="primary start" style="margin-top:12px">대화 시작</button>
       <div id="startErr" class="err hidden"></div>
     </div>
   </section>
@@ -320,9 +325,9 @@
     </label>
     <div style="margin:10px 0 4px;font-weight:600;">대화 길이</div>
     <select id="lenSel" style="width:100%;padding:10px;font-size:15px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;">
-      <option value="3">짧게: 3번 대답 (약 1분)</option>
-      <option value="8">보통: 8번 대답 (약 3분)</option>
-      <option value="20">길게: 20번 대답 (약 8분)</option>
+      <option value="3">3분</option>
+      <option value="5">5분</option>
+      <option value="10">10분</option>
     </select>
     <p class="note">대화는 홈의 "오늘 연습 시작"에서 시작해요.</p>
   </section>
@@ -436,8 +441,10 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.2.0 (2026-11-24)';
-let TURNS = 3;                           // 학습자가 답하는 횟수 (화면에서 고름)
+const APP_VERSION = '0.2.1 (2026-11-24)';
+let LIMIT_MIN = 5;                       // 대화 시간(분). 화면에서 3, 5, 10 중에 고름
+function limitMs() { return (LIMIT_MIN >= 10 ? 9 : LIMIT_MIN) * 60000; }  // 10분은 연결 한도 때문에 9분에 마무리 시작
+function timeIsUp(s) { return performance.now() - s.startedAt >= limitMs(); }
 const API_BASE = 'https://generativelanguage.googleapis.com';
 const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
 const API_REVISION = '2026-05-20';
@@ -453,7 +460,7 @@ const SPEECH_RMS = 0.02;                 // 기기 쪽 말소리 판정 기준
 const VAD_SILENCE_MS = 1500;             // 초급자는 말 사이가 길어서 넉넉히
 const SETUP_TIMEOUT_MS = 12000;
 const OPENER_TIMEOUT_MS = 8000;
-const MAX_SESSION_MS = 9 * 60 * 1000 + 30000;
+const MAX_SESSION_MS = 10 * 60 * 1000 + 30000;
 const LS_KEY = 'ec_gemini_key';
 const LS_RESULT = 'ec_last_result';
 
@@ -606,7 +613,7 @@ const tutorPrompt = () => {
       : 'This is conversation number ' + n + ' of ' + PER_TOPIC + ' on this topic. The learner has answered these questions before. Ask them in a DIFFERENT order from the list, and ask one or two extra follow-up questions about details (who, where, when, why, how).',
     '',
     'Start by greeting the learner in one short sentence and asking your first question about today\'s topic.',
-    'Count the learner\'s answers. After the learner\'s answer number ' + TURNS + ', say ONE short goodbye sentence and do not ask any more questions.'
+    'Keep the conversation going: until you are told that time is up, always end your reply with one question. You will receive a text message when time is up. Only then say ONE short goodbye sentence and stop asking questions.'
   ].join('\n');
 };
 
@@ -810,7 +817,7 @@ function newSession(mode) {
 }
 
 function setStatus(t) { const el = $('status'); if (el.textContent !== t) el.textContent = t; }
-function setTurnInfo() { if (S) $('turnInfo').textContent = '내 대답 ' + S.userTurns + ' / ' + TURNS; }
+function setTurnInfo() { if (S) $('turnInfo').textContent = '내 대답 ' + S.userTurns + '번 / ' + LIMIT_MIN + '분 대화'; }
 function setBig(label, cls, enabled) {
   const b = $('bigBtn');
   b.textContent = label;
@@ -1054,7 +1061,24 @@ function playPcm(s, b64, mime) {
   };
 }
 
+function sendWrap(s) {
+  if (s.wrapSent || s.ended || !s.ws || s.ws.readyState !== 1) return;
+  s.wrapSent = true; s.wrapSentAt = performance.now();
+  try {
+    s.ws.send(JSON.stringify({ realtimeInput: { text: 'Time is up for today. Tell the learner that time is up and say ONE short goodbye sentence. Do not ask a question.' } }));
+    log('시간 종료, 마무리 인사 요청 전송');
+  } catch (e) { log('마무리 요청 전송 실패: ' + e.message, 'WARN'); }
+  setStatus('마무리 중');
+  s.timers.push(setTimeout(() => { if (S === s && !s.ended) { log('마무리 인사가 오지 않아 종료', 'WARN'); finishConversation('완료'); } }, 20000));
+}
+function liveTimeUp(s) {
+  if (S !== s || s.ended || s.mode !== 'live') return;
+  s.timeUp = true;
+  log('정한 시간 ' + LIMIT_MIN + '분 도달');
+  if (!aiPlaying(s)) sendWrap(s);
+}
 function onPlaybackIdle(s) {
+  if (s.timeUp && !s.wrapSent && !s.ended) { sendWrap(s); return; }
   if (s.finishing && !s.ended) {
     log('재생 끝, 마무리');
     finishConversation('완료');
@@ -1092,7 +1116,7 @@ $('startBtn').addEventListener('click', () => {
     // iOS 음성 합성 잠금 해제 (탭 안에서 한 번)
     try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); log('speechSynthesis 잠금 해제 시도'); } catch (e) { log('speechSynthesis 잠금 해제 실패: ' + e.message, 'WARN'); }
   }
-  log('대화 시작: 방식=' + mode + (mode === 'live' ? ', 모델=' + $('liveModel').value : ', 모델=' + TURN_MODEL) + ', TURNS=' + TURNS);
+  log('대화 시작: 방식=' + mode + (mode === 'live' ? ', 모델=' + $('liveModel').value : ', 모델=' + TURN_MODEL) + ', 시간=' + LIMIT_MIN + '분');
   enterTalkUI();
   beginSession(s).catch(e => {
     log('시작 실패: ' + (e && (e.name + ': ' + e.message)), 'ERR');
@@ -1124,6 +1148,7 @@ async function beginSession(s) {
   if (S !== s || s.ended) return;
   requestWakeLock(s);
   s.timers.push(setTimeout(() => { if (S === s && !s.ended) { log('최대 대화 시간 도달', 'WARN'); finishConversation('시간 초과'); } }, MAX_SESSION_MS));
+  s.timers.push(setTimeout(() => liveTimeUp(s), limitMs()));
   if (s.mode === 'live') startLive(s);
   else startTurns(s);
 }
@@ -1305,9 +1330,9 @@ function handleLiveMessage(s, msg, tConn) {
     log('turnComplete #' + s.stats.turnCompletes + ': 내 대답 수=' + s.userTurns + ', AI="' + (s.curAi ? bubbleText(s.curAi) : '').slice(0, 80) + '"');
     s.curAi = null; s.curMe = null; s.modelTurnHasAudio = false;
     setTurnInfo();
-    if (s.userTurns >= TURNS && !s.finishing) {
+    if (s.wrapSent && performance.now() - s.wrapSentAt > 1200 && !s.finishing) {
       s.finishing = true;
-      log('대답 ' + TURNS + '번 완료, AI 마무리 재생 끝나면 종료');
+      log('시간 종료 인사 받음, AI 마무리 재생 끝나면 종료');
       setStatus('마무리 중');
       if (!aiPlaying(s)) finishConversation('완료');
       else s.timers.push(setTimeout(() => { if (!s.ended) finishConversation('완료'); }, 15000));
@@ -1381,7 +1406,7 @@ $('bigBtn').addEventListener('click', () => {
 async function sendTurn(s) {
   const pcm = concatInt16(s.turnRec, s.turnRecLen);
   const wav = encodeWav(pcm, TARGET_RATE);
-  const isLast = s.userTurns + 1 >= TURNS;
+  const isLast = timeIsUp(s);
   setStatus('생각 중');
   setBig('생각 중', 'wait', false);
   const historyText = s.history.map(h => (h.role === 'tutor' ? 'Tutor: ' : 'Learner: ') + h.text).join('\n');
@@ -1447,7 +1472,7 @@ async function sendTurn(s) {
   const ttsMs = sp.started ? Math.round(sp.started - tSend - apiMs) : null;
   s.turnLatencies.push({ turn: s.userTurns, ms: sp.started ? Math.round(sp.started - tSend) : apiMs, api: apiMs, tts: ttsMs });
   if (s.ended) return;
-  if (s.userTurns >= TURNS) finishConversation('완료');
+  if (isLast) finishConversation('완료');
   else readyToSpeak(s);
 }
 
@@ -1825,15 +1850,11 @@ function langHintOk() { try { return localStorage.getItem('ec_lang_hint_bad') !=
 /* ===================== 대화 길이 ===================== */
 (() => {
   const sel = $('lenSel');
-  let saved = 8;
-  try { saved = parseInt(localStorage.getItem('ec_turns') || '8', 10) || 8; } catch (e) {}
-  if (![3, 8, 20].includes(saved)) saved = 8;
-  TURNS = saved; sel.value = String(saved);
-  sel.addEventListener('change', () => {
-    TURNS = parseInt(sel.value, 10) || 3;
-    try { localStorage.setItem('ec_turns', String(TURNS)); } catch (e) {}
-    log('대화 길이 변경: ' + TURNS + '번 대답');
-  });
+  let saved = 5;
+  try { saved = parseInt(localStorage.getItem('ec_minutes') || '5', 10) || 5; } catch (e) {}
+  if (![3, 5, 10].includes(saved)) saved = 5;
+  setMinutes(saved);
+  sel.addEventListener('change', () => setMinutes(parseInt(sel.value, 10) || 5));
 })();
 
 /* ===================== 학습 흐름 (0.2.0) ===================== */
@@ -1888,11 +1909,18 @@ function saveD() {
   try { localStorage.setItem(LS_DATA, JSON.stringify(D)); }
   catch (e) { log('기록 저장 실패: ' + (e && (e.name + ': ' + e.message)), 'ERR'); }
 }
-function setTurns(n) {
-  TURNS = n;
+function setMinutes(n) {
+  if (![3, 5, 10].includes(n)) n = 5;
+  LIMIT_MIN = n;
   $('lenSel').value = String(n);
-  try { localStorage.setItem('ec_turns', String(n)); } catch (e) {}
+  try { localStorage.setItem('ec_minutes', String(n)); } catch (e) {}
+  document.querySelectorAll('.minBtn').forEach(b => b.classList.toggle('on', parseInt(b.getAttribute('data-min'), 10) === n));
+  log('대화 시간 변경: ' + n + '분');
 }
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest && ev.target.closest('.minBtn');
+  if (b) { setMinutes(parseInt(b.getAttribute('data-min'), 10)); if (typeof renderPrep === 'function') { try { renderPrep(); } catch (e) {} } }
+});
 
 /* ---- 화면 전환 ---- */
 const SCREENS = { profile: 'scrProfile', home: 'scrHome', prep: 'scrPrep', talk: 'talkCard', result: 'resultCard', done: 'scrDone', review: 'scrReview', history: 'scrHistory', settings: 'scrSettings' };
@@ -1926,7 +1954,6 @@ function checkedLevel(name) { const el = document.querySelector('input[name=' + 
 function renderProfile() { $('pfLevels').innerHTML = levelChoices('pfLevel', 'A2'); }
 $('pfSaveBtn').addEventListener('click', () => {
   D = newD($('pfName').value.trim().slice(0, 20), checkedLevel('pfLevel'));
-  setTurns(8); // 0.2.0 부터 기본 8번 대답
   saveD();
   log('프로필 만듦: 수준=' + D.profile.level);
   go('home');
@@ -1985,7 +2012,7 @@ function renderHome() {
   const items = [
     { title: '복습', text: rvText, done: reviewDone, next: step === 'review' },
     { title: '준비', text: '"' + t.ko + '" 문장 틀 3개 듣기', done: talks > 0, next: step === 'prep' && talks === 0 },
-    { title: '대화', text: talks > 0 ? '오늘 ' + talks + '번 했어요' : 'AI와 ' + TURNS + '번 대답하기', done: talks > 0, next: false }
+    { title: '대화', text: talks > 0 ? '오늘 ' + talks + '번 했어요' : 'AI와 ' + LIMIT_MIN + '분 대화하기', done: talks > 0, next: false }
   ];
   $('homeSteps').innerHTML = items.map((it, i) => '<li class="' + (it.done ? 'done' : it.next ? 'next' : '') + '"><div class="num">' + (it.done ? '끝' : (i + 1)) + '</div><div><b>' + esc(it.title) + '</b><span>' + esc(it.text) + '</span></div></li>').join('');
   $('goBtn').textContent = step === 'review' ? '오늘 연습 시작 (복습부터)' : talks > 0 ? '한 번 더 연습하기' : '오늘 연습 시작';
@@ -2019,7 +2046,7 @@ function renderPrep() {
   $('prepFrames').innerHTML = framesHtml(t, true);
   const modeEl = document.querySelector('input[name=mode]:checked');
   const live = !modeEl || modeEl.value === 'live';
-  $('prepMode').textContent = '대화 방식: ' + (live ? '실시간 대화' : '번갈아 말하기') + ', ' + TURNS + '번 대답. 설정에서 바꿀 수 있어요.';
+  $('prepMode').textContent = '대화 방식: ' + (live ? '실시간 대화' : '번갈아 말하기') + ', ' + LIMIT_MIN + '분.';
   show('prepNoKey', !getKey());
 }
 function renderTalkFrames() {
