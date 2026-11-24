@@ -233,7 +233,7 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.1.0 (2026-11-24)';
+const APP_VERSION = '0.1.1 (2026-11-24)';
 const TURNS = 3;                         // 학습자가 답하는 횟수
 const API_BASE = 'https://generativelanguage.googleapis.com';
 const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
@@ -879,7 +879,7 @@ function handleLiveMessage(s, msg, tConn) {
 
   const sc = msg.serverContent;
   if (!sc) {
-    if (!msg.usageMetadata && !msg.goAway && !msg.voiceActivity && !msg.sessionResumptionUpdate) log('알 수 없는 메시지: ' + JSON.stringify(msg).slice(0, 300), 'WARN');
+    if (Object.keys(msg).length && !msg.usageMetadata && !msg.goAway && !msg.voiceActivity && !msg.sessionResumptionUpdate) log('알 수 없는 메시지: ' + JSON.stringify(msg).slice(0, 300), 'WARN');
     return;
   }
 
@@ -916,7 +916,7 @@ function handleLiveMessage(s, msg, tConn) {
   if (sc.outputTranscription && sc.outputTranscription.text) {
     s.stats.outTr++;
     if (!s.curAi) s.curAi = addBubble('ai', '');
-    bubbleAppend(s.curAi, sc.outputTranscription.text);
+    bubbleAppend(s.curAi, sc.outputTranscription.text.replace(/[^\u0000-ɏ‘-”]/g, ''));
   }
   if (sc.inputTranscription && sc.inputTranscription.text) {
     s.stats.inTr++;
@@ -1217,6 +1217,7 @@ async function finishConversation(reason) {
     return;
   }
   setStatus('분석 중');
+  lastAnalysisInput = { pcm, transcript, meta };
   const t = performance.now();
   let analysis = null, analysisModel = null, note = '';
   try {
@@ -1269,20 +1270,35 @@ async function analyze(pcm, transcript) {
     store: false
   });
   try {
-    const r = await callInteractions(mk(ANALYSIS_MODEL, 'low'), 120000);
+    const r = await callInteractions(mk(ANALYSIS_MODEL, 'low'), 45000);
     return { json: r.json, model: ANALYSIS_MODEL };
   } catch (e) {
-    if (e.status === 429) {
-      log(ANALYSIS_MODEL + ' 429 (하루 한도 가능성). ' + ANALYSIS_FALLBACK_MODEL + ' 로 한 번 재시도', 'WARN');
-      const r = await callInteractions(mk(ANALYSIS_FALLBACK_MODEL, 'minimal'), 120000);
-      return { json: r.json, model: ANALYSIS_FALLBACK_MODEL };
-    }
-    throw e;
+    if (e.status === 400 || e.status === 401 || e.status === 403) throw e;
+    log(ANALYSIS_MODEL + ' 실패 (' + (e.status || e.message) + '). ' + ANALYSIS_FALLBACK_MODEL + ' 로 한 번 재시도', 'WARN');
+    const r = await callInteractions(mk(ANALYSIS_FALLBACK_MODEL, 'minimal'), 60000);
+    return { json: r.json, model: ANALYSIS_FALLBACK_MODEL };
   }
 }
 
 /* ===================== 결과 화면 ===================== */
 let lastResult = null;
+let lastAnalysisInput = null;
+async function reAnalyze() {
+  const inp = lastAnalysisInput;
+  if (!inp) return;
+  const btn = $('reAnalyzeBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '분석 중'; }
+  const t = performance.now();
+  let analysis = null, analysisModel = null, note = '';
+  try {
+    const r = await analyze(inp.pcm, inp.transcript);
+    analysis = r.json; analysisModel = r.model;
+  } catch (e) {
+    log('다시 분석 실패: ' + e.message, 'ERR');
+    note = '분석에 실패했습니다 (' + e.message + '). 잠시 뒤 다시 눌러 주세요.';
+  }
+  showResult({ meta: inp.meta, transcript: inp.transcript, analysis, analysisMs: Math.round(performance.now() - t), analysisModel, note });
+}
 function showResult(result, fromStorage) {
   lastResult = result;
   show('talkCard', false);
@@ -1298,6 +1314,7 @@ function showResult(result, fromStorage) {
   const m = result.meta || {};
   let h = '';
   if (result.note) h += '<p class="err">' + esc(result.note) + '</p>';
+  if (!a && !fromStorage && lastAnalysisInput) h += '<p><button id="reAnalyzeBtn" type="button">다시 분석</button></p>';
   if (a) {
     const g = (Array.isArray(a.grammar) ? a.grammar : []).slice(0, 4);
     const p = (Array.isArray(a.pronunciation) ? a.pronunciation : []).slice(0, 5);
@@ -1310,6 +1327,8 @@ function showResult(result, fromStorage) {
   h += '<h3>걸린 시간</h3><div class="timing">' + timingLines(result).map(esc).join('<br>') + '</div>';
   h += '<h3>대화 내용</h3><div class="timing">' + (result.transcript || []).map(x => esc((x.role === 'ai' ? 'AI: ' : '나: ') + x.text)).join('<br>') + '</div>';
   $('resultBody').innerHTML = h;
+  const rb = $('reAnalyzeBtn');
+  if (rb) rb.addEventListener('click', reAnalyze);
   $('resultCard').scrollIntoView({ block: 'start' });
   log('결과 표시 (분석 모델=' + (result.analysisModel || '없음') + ', 분석 ' + (result.analysisMs || 0) + 'ms)');
 }
