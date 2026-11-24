@@ -1,0 +1,1396 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:,">
+<title>영어 말하기 연습</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --muted: #6b6b70;
+    --line: #e2e0da;
+    --accent: #1f5eff;
+    --accent-weak: #e7eeff;
+    --ai: #eef1f6;
+    --me: #1f5eff;
+    --me-text: #ffffff;
+    --danger: #c62828;
+    --ok: #2e7d32;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416;
+      --card: #1e1e21;
+      --text: #f2f2f4;
+      --muted: #a0a0a8;
+      --line: #33333a;
+      --accent: #6c95ff;
+      --accent-weak: #22304f;
+      --ai: #2a2c33;
+      --me: #3d6dff;
+      --me-text: #ffffff;
+      --danger: #ff6b6b;
+      --ok: #7bd389;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
+  }
+  h1 { font-size: 22px; margin: 4px 0 2px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card h2 { font-size: 16px; margin: 0 0 8px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > input { flex: 1; min-width: 0; }
+  input[type=password], input[type=text], select {
+    font-size: 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  button {
+    font-size: 16px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .hidden { display: none !important; }
+  .choice {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px;
+  }
+  .choice input { margin-top: 4px; width: 18px; height: 18px; }
+  .choice b { display: block; }
+  .choice span { color: var(--muted); font-size: 14px; }
+  .choice select { margin-top: 6px; width: 100%; font-size: 14px; padding: 6px 8px; }
+  .start { width: 100%; padding: 16px; font-size: 18px; font-weight: 600; }
+  .status {
+    text-align: center; font-weight: 600; font-size: 17px; margin: 4px 0 10px; min-height: 26px;
+  }
+  .turns { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+  .chat { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; min-height: 120px; }
+  .bubble {
+    max-width: 85%; padding: 10px 12px; border-radius: 14px; white-space: pre-wrap; word-break: break-word;
+  }
+  .bubble.ai { background: var(--ai); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .bubble.me { background: var(--me); color: var(--me-text); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .bubble .who { display: block; font-size: 11px; opacity: .7; margin-bottom: 2px; }
+  .bigwrap { display: flex; justify-content: center; margin: 8px 0 14px; }
+  .big {
+    width: 168px; height: 168px; border-radius: 50%;
+    font-size: 19px; font-weight: 700;
+    background: var(--accent); color: #fff; border: none;
+    box-shadow: 0 6px 18px rgba(31, 94, 255, .25);
+  }
+  .big.rec { background: var(--danger); box-shadow: 0 6px 18px rgba(198, 40, 40, .3); }
+  .big.wait { background: var(--muted); box-shadow: none; }
+  .big.listen { background: var(--ok); box-shadow: 0 6px 18px rgba(46, 125, 50, .3); }
+  .endbtn { width: 100%; }
+  .res h3 { font-size: 15px; margin: 14px 0 6px; }
+  .res h3:first-child { margin-top: 0; }
+  .item { border-top: 1px solid var(--line); padding: 8px 0; }
+  .item:first-of-type { border-top: none; }
+  .said { color: var(--muted); text-decoration: line-through; }
+  .fixed { font-weight: 600; }
+  .why { color: var(--muted); font-size: 14px; }
+  .empty { color: var(--muted); font-size: 14px; }
+  .timing { font-size: 14px; color: var(--muted); }
+  .btnrow { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btnrow button { flex: 1; }
+  details.diag summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+  .env { font-size: 12px; width: 100%; border-collapse: collapse; margin: 8px 0; table-layout: fixed; }
+  .env td { border-top: 1px solid var(--line); padding: 4px 4px; vertical-align: top; word-break: break-all; }
+  .env td:first-child { width: 38%; color: var(--muted); word-break: keep-all; }
+  pre.log {
+    font-size: 11px; line-height: 1.4; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px; max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-all;
+  }
+  .err { color: var(--danger); font-size: 14px; margin-top: 8px; }
+  audio { width: 100%; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>영어 말하기 연습</h1>
+  <p class="sub">시험판. AI와 영어로 짧게 대화하고 피드백을 받습니다.</p>
+
+  <!-- 1. 키 설정 -->
+  <section class="card" id="keyCard">
+    <h2>API 키</h2>
+    <div id="keySaved" class="hidden">
+      <div class="row">
+        <span style="flex:1">키가 저장되어 있습니다.</span>
+        <button id="keyChangeBtn" type="button">키 바꾸기</button>
+      </div>
+    </div>
+    <div id="keyEdit">
+      <div class="row">
+        <input id="keyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Gemini API 키 붙여넣기">
+        <button id="keySaveBtn" type="button" class="primary">저장</button>
+      </div>
+    </div>
+    <p class="note">키는 이 기기에만 저장되고 구글 서버로만 전송됩니다.</p>
+  </section>
+
+  <!-- 2. 방식 선택 -->
+  <section class="card" id="modeCard">
+    <h2>대화 방식</h2>
+    <label class="choice">
+      <input type="radio" name="mode" value="live" checked>
+      <div style="flex:1">
+        <b>실시간 대화</b>
+        <span>전화처럼 말하면 AI가 목소리로 대답합니다.</span>
+        <select id="liveModel" aria-label="실시간 모델">
+          <option value="gemini-3.8-live">gemini-3.8-live (기본)</option>
+          <option value="gemini-3.8-live-extended-thinking">gemini-3.8-live-extended-thinking</option>
+          <option value="gemini-2.5-flash-native-audio-preview-12-2025">gemini-2.5-flash-native-audio-preview-12-2025</option>
+        </select>
+      </div>
+    </label>
+    <label class="choice">
+      <input type="radio" name="mode" value="turns">
+      <div>
+        <b>번갈아 말하기</b>
+        <span>버튼을 눌러 말하고, 다시 눌러 보냅니다. AI 답은 기기 음성으로 읽습니다.</span>
+      </div>
+    </label>
+    <button id="startBtn" type="button" class="primary start">대화 시작</button>
+    <div id="startErr" class="err hidden"></div>
+  </section>
+
+  <!-- 3. 대화 화면 -->
+  <section class="card hidden" id="talkCard">
+    <div class="status" id="status">준비 중</div>
+    <div class="turns" id="turnInfo"></div>
+    <div class="chat" id="chat"></div>
+    <div class="bigwrap">
+      <button id="bigBtn" type="button" class="big wait" disabled>준비 중</button>
+    </div>
+    <button id="endBtn" type="button" class="endbtn">대화 끝내기</button>
+  </section>
+
+  <!-- 4. 결과 화면 -->
+  <section class="card hidden" id="resultCard">
+    <h2 id="resultTitle">결과</h2>
+    <div id="resultBody" class="res"></div>
+    <div class="btnrow">
+      <button id="copyResultBtn" type="button">결과 복사</button>
+      <button id="newBtn" type="button" class="primary">새 대화</button>
+    </div>
+  </section>
+
+  <!-- 5. 진단 패널 -->
+  <section class="card">
+    <details class="diag" id="diag">
+      <summary>진단 정보</summary>
+      <table class="env" id="envTable"></table>
+      <div class="btnrow">
+        <button id="copyLogBtn" type="button">로그 복사</button>
+        <button id="clearLogBtn" type="button">로그 지우기</button>
+      </div>
+      <div id="recWrap" class="hidden">
+        <p class="note">마지막 녹음 (분석에 보낸 소리)</p>
+        <audio id="recAudio" controls></audio>
+      </div>
+      <pre class="log" id="logBox"></pre>
+    </details>
+  </section>
+</main>
+
+<script>
+'use strict';
+
+/* ===================== 설정 상수 ===================== */
+const APP_VERSION = '0.1.0 (2026-11-24)';
+const TURNS = 3;                         // 학습자가 답하는 횟수
+const API_BASE = 'https://generativelanguage.googleapis.com';
+const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
+const API_REVISION = '2026-05-20';
+const LIVE_WS_BASE = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
+const TURN_MODEL = 'gemini-3.5-flash-lite';
+const ANALYSIS_MODEL = 'gemini-4-hydrogen';
+const ANALYSIS_FALLBACK_MODEL = 'gemini-3.5-flash-lite';
+const TARGET_RATE = 16000;               // Live 입력, WAV 공통
+const SEND_CHUNK_SAMPLES = 640;          // 40ms @16kHz
+const MAX_REC_SAMPLES = TARGET_RATE * 240; // 4분
+const RECORD_DURING_AI_PLAYBACK = false; // AI 목소리가 녹음에 섞이지 않게
+const SPEECH_RMS = 0.02;                 // 기기 쪽 말소리 판정 기준
+const VAD_SILENCE_MS = 1500;             // 초급자는 말 사이가 길어서 넉넉히
+const SETUP_TIMEOUT_MS = 12000;
+const OPENER_TIMEOUT_MS = 8000;
+const MAX_SESSION_MS = 6 * 60 * 1000;
+const LS_KEY = 'ec_gemini_key';
+const LS_RESULT = 'ec_last_result';
+
+const TUTOR_PROMPT = [
+  'You are a friendly English conversation tutor.',
+  'The learner is Korean, CEFR level A2 (beginner).',
+  'RESPOND IN ENGLISH. YOU MUST RESPOND UNMISTAKABLY IN ENGLISH, even if the learner speaks Korean.',
+  'Speak slowly and clearly, with simple words.',
+  'Ask only ONE short question at a time (12 words or fewer).',
+  'Do NOT correct the learner\'s mistakes during the conversation.',
+  'First react briefly to what the learner said (a few words), then ask one follow-up question.',
+  'Topics: everyday life such as their day today, family, work, weekend.',
+  'Start by greeting the learner in one short sentence and asking your first question.',
+  'Count the learner\'s answers. After the learner\'s answer number ' + TURNS + ', say ONE short goodbye sentence and do not ask any more questions.'
+].join('\n');
+
+const OPENERS = [
+  'Hi! How was your day today?',
+  'Hello! What did you do this morning?',
+  'Hi there! How are you feeling today?',
+  'Hello! What are your plans for the weekend?'
+];
+
+/* ===================== 로그 ===================== */
+const logLines = [];
+const t0 = performance.now();
+function pad(n, w) { return String(n).padStart(w || 2, '0'); }
+function stamp() {
+  const d = new Date();
+  return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + '.' + pad(d.getMilliseconds(), 3);
+}
+function redact(s) {
+  s = String(s);
+  const k = getKey();
+  if (k && k.length >= 8) s = s.split(k).join('***');
+  return s.replace(/([?&](key|access_token)=)[^&\s"']+/gi, '$1***').replace(/AIza[0-9A-Za-z_\-]{20,}/g, 'AIza***');
+}
+function log(msg, level) {
+  const line = stamp() + ' +' + Math.round(performance.now() - t0) + 'ms ' + (level ? '[' + level + '] ' : '') + redact(msg);
+  logLines.push(line);
+  if (logLines.length > 800) logLines.splice(0, logLines.length - 800);
+  if (level === 'ERR') console.error(line); else console.log(line);
+  if ($('diag').open) renderLog();
+}
+function renderLog() {
+  const box = $('logBox');
+  box.textContent = logLines.join('\n');
+  box.scrollTop = box.scrollHeight;
+}
+window.addEventListener('error', e => log('window.onerror: ' + (e.message || e) + ' @' + (e.lineno || '?'), 'ERR'));
+window.addEventListener('unhandledrejection', e => log('unhandledrejection: ' + (e.reason && (e.reason.stack || e.reason.message) || e.reason), 'ERR'));
+
+/* ===================== 작은 도구 ===================== */
+function $(id) { return document.getElementById(id); }
+function show(id, on) { $(id).classList.toggle('hidden', !on); }
+function getKey() { try { return (localStorage.getItem(LS_KEY) || '').trim(); } catch (e) { return ''; } }
+function sec(ms) { return (ms / 1000).toFixed(1) + '초'; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function bytesToBase64(u8) {
+  let s = '';
+  const CH = 0x8000;
+  for (let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+  return btoa(s);
+}
+function base64ToBytes(b64) {
+  const bin = atob(b64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8;
+}
+function concatInt16(chunks, total) {
+  if (total == null) total = chunks.reduce((a, c) => a + c.length, 0);
+  const out = new Int16Array(total);
+  let o = 0;
+  for (const c of chunks) { out.set(c, o); o += c.length; }
+  return out;
+}
+function encodeWav(int16, rate) {
+  const dataLen = int16.length * 2;
+  const buf = new ArrayBuffer(44 + dataLen);
+  const v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + dataLen, true); w(8, 'WAVE');
+  w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, 'data'); v.setUint32(40, dataLen, true);
+  new Int16Array(buf, 44).set(int16);
+  return new Uint8Array(buf);
+}
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+}
+function flash(btn, text) {
+  const old = btn.textContent;
+  btn.textContent = text;
+  setTimeout(() => { btn.textContent = old; }, 1500);
+}
+
+/* ===================== 환경 점검 ===================== */
+const env = {};
+function setEnv(k, v) { env[k] = v; renderEnv(); }
+function renderEnv() {
+  $('envTable').innerHTML = Object.keys(env).map(k => '<tr><td>' + esc(k) + '</td><td>' + esc(env[k]) + '</td></tr>').join('');
+}
+function checkEnv() {
+  setEnv('앱 버전', APP_VERSION);
+  setEnv('보안 컨텍스트(HTTPS)', String(window.isSecureContext));
+  setEnv('getUserMedia', String(!!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)));
+  const AC = window.AudioContext || window.webkitAudioContext;
+  setEnv('AudioContext', AC ? (window.AudioContext ? 'AudioContext' : 'webkitAudioContext') : '없음');
+  if (AC) {
+    try {
+      const c = new AC();
+      setEnv('AudioContext sampleRate', String(c.sampleRate));
+      setEnv('AudioWorklet', String(!!(c.audioWorklet && typeof AudioWorkletNode !== 'undefined')));
+      if (c.close) c.close().catch(() => {});
+    } catch (e) { setEnv('AudioContext sampleRate', '생성 실패: ' + e.message); }
+  }
+  if (window.MediaRecorder && MediaRecorder.isTypeSupported) {
+    const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mp4;codecs=mp4a.40.2', 'audio/aac', 'audio/ogg;codecs=opus', 'audio/wav'];
+    setEnv('MediaRecorder MIME', types.filter(t => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }).join(', ') || '없음');
+  } else setEnv('MediaRecorder MIME', 'MediaRecorder 없음');
+  setEnv('WebSocket', String(typeof WebSocket !== 'undefined'));
+  setEnv('Wake Lock', String(!!(navigator.wakeLock)));
+  setEnv('audioSession', navigator.audioSession ? ('type=' + navigator.audioSession.type) : '없음');
+  const countVoices = () => {
+    if (!window.speechSynthesis) { setEnv('speechSynthesis 영어 목소리', 'speechSynthesis 없음'); return; }
+    const vs = speechSynthesis.getVoices();
+    const en = vs.filter(v => /^en(-|_|$)/i.test(v.lang));
+    const us = en.filter(v => /en[-_]US/i.test(v.lang));
+    setEnv('speechSynthesis 영어 목소리', en.length + '개 (en-US ' + us.length + '개, 전체 ' + vs.length + '개)');
+  };
+  countVoices();
+  if (window.speechSynthesis && speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', countVoices);
+  setEnv('userAgent', navigator.userAgent);
+  log('환경 점검: ' + JSON.stringify(env));
+}
+
+/* ===================== 키 화면 ===================== */
+function refreshKeyUI() {
+  const has = !!getKey();
+  show('keySaved', has);
+  show('keyEdit', !has);
+}
+$('keySaveBtn').addEventListener('click', () => {
+  const v = $('keyInput').value.trim();
+  if (!v) { $('keyInput').focus(); return; }
+  try { localStorage.setItem(LS_KEY, v); log('키 저장됨 (길이 ' + v.length + ')'); }
+  catch (e) { log('키 저장 실패: ' + e.message, 'ERR'); }
+  $('keyInput').value = '';
+  refreshKeyUI();
+});
+$('keyChangeBtn').addEventListener('click', () => { show('keySaved', false); show('keyEdit', true); $('keyInput').focus(); });
+
+/* ===================== 대화 상태 ===================== */
+let S = null; // 현재 세션
+
+function newSession(mode) {
+  return {
+    mode,
+    startedAt: performance.now(),
+    ended: false,
+    ctx: null,
+    stream: null,
+    srcNode: null,
+    procNode: null,
+    sinkNode: null,
+    captureKind: '',
+    resampler: null,
+    sendBuf: [], sendLen: 0,
+    rec: [], recLen: 0, recSkipped: 0, recCapped: false,
+    turnRec: null, turnRecLen: 0, recording: false,
+    lastSpeechAt: 0, userSpeaking: false, peakRms: 0,
+    userTurns: 0,
+    turnLatencies: [],   // {turn, ms, api?, tts?}
+    ws: null,
+    setupDone: false,
+    playSources: new Set(), nextPlayTime: 0, outRate: 24000,
+    curAi: null, curMe: null,
+    modelTurnHasAudio: false,
+    userSpokeSinceModelTurn: false,
+    finishing: false,
+    wakeLock: null,
+    timers: [],
+    stats: { sentChunks: 0, sentBytes: 0, recvAudio: 0, recvAudioBytes: 0, underruns: 0, interrupts: 0, inTr: 0, outTr: 0, interimTr: 0, turnCompletes: 0, messages: 0 },
+    firstAudioAt: 0
+  };
+}
+
+function setStatus(t) { const el = $('status'); if (el.textContent !== t) el.textContent = t; }
+function setTurnInfo() { if (S) $('turnInfo').textContent = '내 대답 ' + S.userTurns + ' / ' + TURNS; }
+function setBig(label, cls, enabled) {
+  const b = $('bigBtn');
+  b.textContent = label;
+  b.className = 'big ' + (cls || '');
+  b.disabled = !enabled;
+}
+function addBubble(role, text, beforeEl) {
+  const d = document.createElement('div');
+  d.className = 'bubble ' + role;
+  d.dataset.role = role;
+  const who = document.createElement('span');
+  who.className = 'who';
+  who.textContent = role === 'ai' ? 'AI' : '나 (인식된 말)';
+  const body = document.createElement('span');
+  body.className = 'txt';
+  body.textContent = text || '';
+  d.appendChild(who); d.appendChild(body);
+  if (beforeEl && beforeEl.parentNode === $('chat')) $('chat').insertBefore(d, beforeEl);
+  else $('chat').appendChild(d);
+  d.scrollIntoView({ block: 'end', behavior: 'smooth' });
+  return d;
+}
+function bubbleAppend(el, text) {
+  const t = el.querySelector('.txt');
+  t.textContent += text;
+}
+function bubbleText(el) { return (el.querySelector('.txt').textContent || '').trim(); }
+function transcriptFromChat() {
+  return Array.from($('chat').querySelectorAll('.bubble')).map(b => ({ role: b.dataset.role, text: bubbleText(b) })).filter(x => x.text);
+}
+
+/* ===================== 오디오: 시작/정리 ===================== */
+const WORKLET_SRC = `
+class CapProc extends AudioWorkletProcessor {
+  constructor() { super(); this.buf = new Float32Array(2048); this.n = 0; }
+  process(inputs) {
+    const ch = inputs[0] && inputs[0][0];
+    if (ch) {
+      for (let i = 0; i < ch.length; i++) {
+        this.buf[this.n++] = ch[i];
+        if (this.n === this.buf.length) { this.port.postMessage(this.buf.slice(0)); this.n = 0; }
+      }
+    }
+    return true;
+  }
+}
+registerProcessor('cap-proc', CapProc);
+`;
+
+function makeResampler(inRate, outRate) {
+  const ratio = inRate / outRate;
+  // 간단한 1차 저역 필터 (약 7kHz) 후 선형 보간
+  const alpha = 1 - Math.exp(-2 * Math.PI * 7000 / inRate);
+  let lp = 0, last = 0, t = 0;
+  return function (input) {
+    const len = input.length;
+    const f = new Float32Array(len);
+    for (let i = 0; i < len; i++) { lp += alpha * (input[i] - lp); f[i] = lp; }
+    const out = [];
+    while (true) {
+      const i0 = Math.floor(t);
+      if (i0 + 1 >= len) break;
+      const a = i0 < 0 ? last : f[i0];
+      const b = f[i0 + 1];
+      out.push(a + (b - a) * (t - i0));
+      t += ratio;
+    }
+    t -= len;
+    last = f[len - 1];
+    const o16 = new Int16Array(out.length);
+    for (let i = 0; i < out.length; i++) {
+      let s = out[i];
+      if (s > 1) s = 1; else if (s < -1) s = -1;
+      o16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return o16;
+  };
+}
+
+// 반드시 사용자 탭 핸들러 안에서 동기적으로 먼저 호출
+function createAudioContextInGesture() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AC();
+  const p = ctx.resume ? ctx.resume() : null;
+  if (p && p.catch) p.catch(e => log('ctx.resume 실패(탭 안): ' + e.message, 'WARN'));
+  // iOS 재생 잠금 해제용 무음 1프레임
+  try {
+    const b = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const s = ctx.createBufferSource();
+    s.buffer = b; s.connect(ctx.destination); s.start(0);
+  } catch (e) { log('무음 재생 실패: ' + e.message, 'WARN'); }
+  ctx.onstatechange = () => log('AudioContext state=' + ctx.state);
+  log('AudioContext 생성: sampleRate=' + ctx.sampleRate + ', state=' + ctx.state);
+  return ctx;
+}
+
+async function startMic(s) {
+  const ctx = s.ctx;
+  const t = performance.now();
+  s.stream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
+  });
+  const track = s.stream.getAudioTracks()[0];
+  let settings = {};
+  try { settings = track.getSettings ? track.getSettings() : {}; } catch (e) {}
+  log('마이크 허용 (' + Math.round(performance.now() - t) + 'ms): label=' + (track.label || '?') + ', settings=' + JSON.stringify(settings));
+  if (settings.sampleRate && settings.sampleRate !== ctx.sampleRate) log('마이크 sampleRate(' + settings.sampleRate + ')와 AudioContext(' + ctx.sampleRate + ')가 다름', 'WARN');
+  track.onended = () => log('마이크 트랙 종료됨(onended)', 'WARN');
+  track.onmute = () => log('마이크 트랙 mute', 'WARN');
+  track.onunmute = () => log('마이크 트랙 unmute');
+
+  if (ctx.state !== 'running') {
+    try { await ctx.resume(); } catch (e) { log('ctx.resume 실패: ' + e.message, 'ERR'); }
+    log('마이크 후 AudioContext state=' + ctx.state);
+  }
+
+  s.srcNode = ctx.createMediaStreamSource(s.stream);
+  s.sinkNode = ctx.createGain();
+  s.sinkNode.gain.value = 0;
+  s.sinkNode.connect(ctx.destination);
+  s.resampler = makeResampler(ctx.sampleRate, TARGET_RATE);
+
+  let ok = false;
+  if (ctx.audioWorklet && typeof AudioWorkletNode !== 'undefined') {
+    const urls = [];
+    try { urls.push(['blob', URL.createObjectURL(new Blob([WORKLET_SRC], { type: 'application/javascript' }))]); } catch (e) {}
+    urls.push(['data', 'data:application/javascript;base64,' + btoa(WORKLET_SRC)]);
+    for (const [kind, url] of urls) {
+      try {
+        await ctx.audioWorklet.addModule(url);
+        const node = new AudioWorkletNode(ctx, 'cap-proc', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1 });
+        node.port.onmessage = ev => onPcm(s, ev.data);
+        s.srcNode.connect(node);
+        node.connect(s.sinkNode);
+        s.procNode = node;
+        s.captureKind = 'AudioWorklet(' + kind + ')';
+        ok = true;
+        break;
+      } catch (e) {
+        log('AudioWorklet(' + kind + ') 실패: ' + (e && e.message), 'WARN');
+      }
+    }
+  }
+  if (!ok) {
+    const sp = ctx.createScriptProcessor(2048, 1, 1);
+    sp.onaudioprocess = ev => onPcm(s, new Float32Array(ev.inputBuffer.getChannelData(0)));
+    s.srcNode.connect(sp);
+    sp.connect(s.sinkNode);
+    s.procNode = sp;
+    s.captureKind = 'ScriptProcessor';
+  }
+  log('캡처 방식: ' + s.captureKind);
+  setEnv('마지막 캡처 방식', s.captureKind);
+}
+
+function aiPlaying(s) { return s.playSources.size > 0; }
+
+let lastStatusAt = 0;
+function onPcm(s, f32) {
+  if (!S || S !== s || s.ended) return;
+  const pcm = s.resampler(f32);
+  if (!pcm.length) return;
+
+  // 기기 쪽 말소리 판정
+  let sum = 0;
+  for (let i = 0; i < f32.length; i++) sum += f32[i] * f32[i];
+  const rms = Math.sqrt(sum / f32.length);
+  const now = performance.now();
+  if (rms > s.peakRms) s.peakRms = rms;
+  if (rms > SPEECH_RMS) {
+    s.lastSpeechAt = now;
+    if (!aiPlaying(s)) { s.userSpokeSinceModelTurn = true; s.localSpeechThisTurn = true; }
+  }
+
+  // (b) 분석용 녹음
+  const recordNow = s.mode === 'live' ? (RECORD_DURING_AI_PLAYBACK || !aiPlaying(s)) && s.setupDone : s.recording;
+  if (recordNow) {
+    if (s.recLen + pcm.length <= MAX_REC_SAMPLES) {
+      if (s.mode === 'live') { s.rec.push(pcm); s.recLen += pcm.length; }
+      else { s.turnRec.push(pcm); s.turnRecLen += pcm.length; }
+    } else if (!s.recCapped) { s.recCapped = true; log('녹음 4분 도달, 이후는 분석에서 제외', 'WARN'); }
+  } else if (s.mode === 'live' && s.setupDone) {
+    s.recSkipped += pcm.length;
+  }
+
+  // (a) Live 스트리밍
+  if (s.mode === 'live' && s.setupDone && s.ws && s.ws.readyState === 1) {
+    s.sendBuf.push(pcm); s.sendLen += pcm.length;
+    if (s.sendLen >= SEND_CHUNK_SAMPLES) {
+      const chunk = concatInt16(s.sendBuf, s.sendLen);
+      s.sendBuf = []; s.sendLen = 0;
+      const b64 = bytesToBase64(new Uint8Array(chunk.buffer));
+      try {
+        s.ws.send(JSON.stringify({ realtimeInput: { audio: { data: b64, mimeType: 'audio/pcm;rate=16000' } } }));
+        s.stats.sentChunks++; s.stats.sentBytes += chunk.length * 2;
+        if (s.stats.sentChunks === 1) log('첫 오디오 청크 전송');
+      } catch (e) { log('ws.send 실패: ' + e.message, 'ERR'); }
+    }
+  }
+
+  // 상태 표시 (live)
+  if (s.mode === 'live' && now - lastStatusAt > 200) {
+    lastStatusAt = now;
+    if (aiPlaying(s)) { setStatus('말하는 중'); setBig('AI 말하는 중', 'wait', false); }
+    else if (s.userSpokeSinceModelTurn && now - s.lastSpeechAt > 700) { setStatus('생각 중'); setBig('생각 중', 'wait', false); }
+    else if (s.setupDone) { setStatus('듣는 중'); setBig('듣는 중', 'listen', false); }
+  }
+}
+
+function stopPlayback(s) {
+  for (const src of s.playSources) { try { src.onended = null; src.stop(); } catch (e) {} }
+  s.playSources.clear();
+  s.nextPlayTime = 0;
+}
+
+function playPcm(s, b64, mime) {
+  const ctx = s.ctx;
+  const bytes = base64ToBytes(b64);
+  const n = Math.floor(bytes.length / 2);
+  if (!n) return;
+  const m = /rate=(\d+)/.exec(mime || '');
+  const rate = m ? parseInt(m[1], 10) : s.outRate;
+  const i16 = new Int16Array(bytes.buffer, 0, n);
+  const buf = ctx.createBuffer(1, n, rate);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) ch[i] = i16[i] / 32768;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  const now = ctx.currentTime;
+  if (s.nextPlayTime < now + 0.01) {
+    if (s.playSources.size > 0 || s.nextPlayTime > 0) s.stats.underruns++;
+    s.nextPlayTime = now + 0.06;
+  }
+  src.start(s.nextPlayTime);
+  s.nextPlayTime += buf.duration;
+  s.playSources.add(src);
+  src.onended = () => {
+    s.playSources.delete(src);
+    if (s.playSources.size === 0) onPlaybackIdle(s);
+  };
+}
+
+function onPlaybackIdle(s) {
+  if (s.finishing && !s.ended) {
+    log('재생 끝, 마무리');
+    finishConversation('완료');
+  }
+}
+
+async function cleanupAudio(s) {
+  try { if (s.procNode) { s.procNode.disconnect(); if (s.procNode.port) s.procNode.port.onmessage = null; s.procNode.onaudioprocess = null; } } catch (e) {}
+  try { if (s.srcNode) s.srcNode.disconnect(); } catch (e) {}
+  try { if (s.stream) s.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+  stopPlayback(s);
+  try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  try { if (s.ctx && s.ctx.state !== 'closed') await s.ctx.close(); } catch (e) {}
+}
+
+async function requestWakeLock(s) {
+  if (!navigator.wakeLock) return;
+  try { s.wakeLock = await navigator.wakeLock.request('screen'); log('Wake Lock 획득'); }
+  catch (e) { log('Wake Lock 실패: ' + e.message, 'WARN'); }
+}
+
+/* ===================== 시작 ===================== */
+$('startBtn').addEventListener('click', () => {
+  // 탭 안에서 동기 처리할 것들
+  $('startErr').classList.add('hidden');
+  const key = getKey();
+  if (!key) { showStartErr('먼저 API 키를 저장하세요.'); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showStartErr('이 브라우저는 마이크를 쓸 수 없습니다. HTTPS 주소인지 확인하세요.'); return; }
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  const s = newSession(mode);
+  S = s;
+  try { s.ctx = createAudioContextInGesture(); }
+  catch (e) { log('AudioContext 생성 실패: ' + e.message, 'ERR'); showStartErr('오디오를 켤 수 없습니다.'); S = null; return; }
+  if (mode === 'turns' && window.speechSynthesis) {
+    // iOS 음성 합성 잠금 해제 (탭 안에서 한 번)
+    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); log('speechSynthesis 잠금 해제 시도'); } catch (e) { log('speechSynthesis 잠금 해제 실패: ' + e.message, 'WARN'); }
+  }
+  log('대화 시작: 방식=' + mode + (mode === 'live' ? ', 모델=' + $('liveModel').value : ', 모델=' + TURN_MODEL) + ', TURNS=' + TURNS);
+  enterTalkUI();
+  beginSession(s).catch(e => {
+    log('시작 실패: ' + (e && (e.name + ': ' + e.message)), 'ERR');
+    const msg = e && e.name === 'NotAllowedError' ? '마이크 권한이 거부되었습니다. 설정에서 허용해 주세요.' : '시작하지 못했습니다. 진단 정보를 확인하세요.';
+    abortSession(msg);
+  });
+});
+
+function showStartErr(t) { const el = $('startErr'); el.textContent = t; el.classList.remove('hidden'); }
+
+function enterTalkUI() {
+  $('chat').innerHTML = '';
+  show('talkCard', true);
+  show('resultCard', false);
+  show('modeCard', false);
+  show('keyCard', false);
+  setStatus('준비 중');
+  setBig('준비 중', 'wait', false);
+  $('endBtn').disabled = false;
+  setTurnInfo();
+  window.scrollTo(0, 0);
+}
+function exitToHome() {
+  show('talkCard', false);
+  show('modeCard', true);
+  show('keyCard', true);
+  refreshKeyUI();
+}
+
+async function beginSession(s) {
+  await startMic(s);
+  if (S !== s || s.ended) return;
+  requestWakeLock(s);
+  s.timers.push(setTimeout(() => { if (S === s && !s.ended) { log('최대 대화 시간 도달', 'WARN'); finishConversation('시간 초과'); } }, MAX_SESSION_MS));
+  if (s.mode === 'live') startLive(s);
+  else startTurns(s);
+}
+
+async function abortSession(msg) {
+  const s = S;
+  if (!s) return;
+  s.ended = true;
+  s.timers.forEach(clearTimeout);
+  try { if (s.ws) s.ws.close(); } catch (e) {}
+  await cleanupAudio(s);
+  try { if (s.wakeLock) s.wakeLock.release(); } catch (e) {}
+  S = null;
+  exitToHome();
+  showStartErr(msg);
+}
+
+/* ===================== 방식 1: 실시간 대화 (Live API) ===================== */
+function startLive(s) {
+  const model = $('liveModel').value;
+  setStatus('연결 중');
+  const url = LIVE_WS_BASE + '?key=' + encodeURIComponent(getKey());
+  log('WebSocket 연결 시도: ' + LIVE_WS_BASE + '?key=***');
+  const tConn = performance.now();
+  let ws;
+  try { ws = new WebSocket(url); }
+  catch (e) { log('WebSocket 생성 실패: ' + e.message, 'ERR'); abortSession('연결하지 못했습니다.'); return; }
+  s.ws = ws;
+
+  const setupTimer = setTimeout(() => {
+    if (!s.setupDone && !s.ended) { log('setupComplete 시간 초과 (' + SETUP_TIMEOUT_MS + 'ms)', 'ERR'); abortSession('서버 응답이 없습니다. 진단 정보를 확인하세요.'); }
+  }, SETUP_TIMEOUT_MS);
+  s.timers.push(setupTimer);
+
+  ws.onopen = () => {
+    log('WebSocket open (' + Math.round(performance.now() - tConn) + 'ms)');
+    const setup = {
+      setup: {
+        model: 'models/' + model,
+        generationConfig: { responseModalities: ['AUDIO'] },
+        systemInstruction: { parts: [{ text: TUTOR_PROMPT }] },
+        realtimeInputConfig: {
+          automaticActivityDetection: {
+            endOfSpeechSensitivity: 'END_SENSITIVITY_LOW',
+            silenceDurationMs: VAD_SILENCE_MS
+          }
+        },
+        inputAudioTranscription: {},
+        outputAudioTranscription: {}
+      }
+    };
+    ws.send(JSON.stringify(setup));
+    log('setup 전송: ' + JSON.stringify(setup).slice(0, 300));
+  };
+
+  ws.onmessage = async ev => {
+    let txt = ev.data;
+    try {
+      if (typeof txt !== 'string') {
+        if (txt instanceof Blob) txt = await txt.text();
+        else if (txt instanceof ArrayBuffer) txt = new TextDecoder().decode(txt);
+      }
+    } catch (e) { log('메시지 디코드 실패: ' + e.message, 'ERR'); return; }
+    let msg;
+    try { msg = JSON.parse(txt); } catch (e) { log('JSON 아님: ' + String(txt).slice(0, 300), 'ERR'); return; }
+    s.stats.messages++;
+    handleLiveMessage(s, msg, tConn);
+  };
+
+  ws.onerror = () => log('WebSocket error 이벤트 (브라우저는 상세 원인을 주지 않음, 이어지는 close 코드 확인)', 'ERR');
+
+  ws.onclose = ev => {
+    log('WebSocket close: code=' + ev.code + ', reason="' + String(ev.reason || '').slice(0, 300) + '", wasClean=' + ev.wasClean, ev.code === 1000 ? '' : 'WARN');
+    if (S === s && !s.ended) {
+      if (!s.setupDone) abortSession('연결이 끊겼습니다 (코드 ' + ev.code + '). 진단 정보를 확인하세요.');
+      else finishConversation('연결 끊김');
+    }
+  };
+}
+
+function handleLiveMessage(s, msg, tConn) {
+  if (s.ended) return;
+  if (msg.setupComplete) {
+    s.setupDone = true;
+    log('setupComplete (' + Math.round(performance.now() - tConn) + 'ms)');
+    setStatus('AI가 인사하는 중');
+    // Live API는 사용자 입력을 기다리므로 먼저 말하게 한다
+    const kick = { realtimeInput: { text: 'The learner has just joined. Greet them in one short sentence and ask your first question.' } };
+    s.ws.send(JSON.stringify(kick));
+    s.kickAt = performance.now();
+    log('첫 인사 요청 전송 (realtimeInput.text)');
+    s.timers.push(setTimeout(() => {
+      if (!s.ended && !s.firstAudioAt) {
+        log('첫 인사 오디오가 ' + OPENER_TIMEOUT_MS + 'ms 안에 오지 않음. clientContent 로 재요청', 'WARN');
+        try {
+          s.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: 'Hello! Please start the lesson.' }] }], turnComplete: true } }));
+        } catch (e) { log('재요청 실패: ' + e.message, 'ERR'); }
+      }
+    }, OPENER_TIMEOUT_MS));
+    return;
+  }
+  if (msg.goAway) { log('goAway: ' + JSON.stringify(msg.goAway), 'WARN'); }
+  if (msg.voiceActivity) { log('voiceActivity: ' + JSON.stringify(msg.voiceActivity)); }
+  if (msg.toolCall) { log('toolCall 수신 (사용 안 함): ' + JSON.stringify(msg.toolCall).slice(0, 200), 'WARN'); }
+  if (msg.sessionResumptionUpdate) { log('sessionResumptionUpdate 수신'); }
+  if (msg.error) { log('서버 error 메시지: ' + JSON.stringify(msg.error).slice(0, 300), 'ERR'); }
+
+  const sc = msg.serverContent;
+  if (!sc) {
+    if (!msg.usageMetadata && !msg.goAway && !msg.voiceActivity && !msg.sessionResumptionUpdate) log('알 수 없는 메시지: ' + JSON.stringify(msg).slice(0, 300), 'WARN');
+    return;
+  }
+
+  // 오디오
+  const parts = sc.modelTurn && sc.modelTurn.parts;
+  if (parts && parts.length) {
+    for (const p of parts) {
+      if (p.inlineData && p.inlineData.data) {
+        const now = performance.now();
+        if (!s.firstAudioAt) {
+          s.firstAudioAt = now;
+          log('첫 모델 오디오 수신: mime=' + p.inlineData.mimeType + ', 인사 요청 후 ' + Math.round(now - (s.kickAt || now)) + 'ms');
+          s.openerLatency = Math.round(now - (s.kickAt || now));
+        }
+        if (!s.modelTurnHasAudio) {
+          s.modelTurnHasAudio = true;
+          if (s.stats.turnCompletes > 0 && s.userSpokeSinceModelTurn && s.lastSpeechAt) {
+            const ms = Math.round(now - s.lastSpeechAt);
+            s.turnLatencies.push({ turn: s.userTurns + 1, ms });
+            log('응답 대기: 내 말 끝(기기 판정) -> 첫 오디오 ' + ms + 'ms');
+          }
+          s.userSpokeSinceModelTurn = false;
+        }
+        s.stats.recvAudio++;
+        s.stats.recvAudioBytes += Math.floor(p.inlineData.data.length * 3 / 4);
+        try { playPcm(s, p.inlineData.data, p.inlineData.mimeType); }
+        catch (e) { log('재생 실패: ' + e.message, 'ERR'); }
+      } else if (p.text) {
+        log('텍스트 part 수신' + (p.thought ? '(thought)' : '') + ': ' + p.text.slice(0, 120));
+      }
+    }
+  }
+
+  if (sc.outputTranscription && sc.outputTranscription.text) {
+    s.stats.outTr++;
+    if (!s.curAi) s.curAi = addBubble('ai', '');
+    bubbleAppend(s.curAi, sc.outputTranscription.text);
+  }
+  if (sc.inputTranscription && sc.inputTranscription.text) {
+    s.stats.inTr++;
+    if (!s.curMe) s.curMe = addBubble('me', '', s.curAi);
+    bubbleAppend(s.curMe, sc.inputTranscription.text);
+  }
+  if (sc.interimInputTranscription) s.stats.interimTr++;
+
+  if (sc.interrupted) {
+    s.stats.interrupts++;
+    log('interrupted 수신: 재생 큐 비움 (대기 소스 ' + s.playSources.size + '개)');
+    stopPlayback(s);
+  }
+  if (sc.generationComplete) log('generationComplete');
+  if (sc.interactionStatus) log('interactionStatus=' + sc.interactionStatus);
+  if (sc.waitingForInput) log('waitingForInput');
+
+  if (sc.turnComplete) {
+    s.stats.turnCompletes++;
+    const userText = s.curMe ? bubbleText(s.curMe) : '';
+    if (userText) s.userTurns++;
+    else if (s.localSpeechThisTurn && s.stats.turnCompletes > 1) {
+      s.userTurns++;
+      log('입력 전사 없이 기기 말소리 판정으로 대답 수를 셈', 'WARN');
+    }
+    s.localSpeechThisTurn = false;
+    log('turnComplete #' + s.stats.turnCompletes + ': 내 대답 수=' + s.userTurns + ', AI="' + (s.curAi ? bubbleText(s.curAi) : '').slice(0, 80) + '"');
+    s.curAi = null; s.curMe = null; s.modelTurnHasAudio = false;
+    setTurnInfo();
+    if (s.userTurns >= TURNS && !s.finishing) {
+      s.finishing = true;
+      log('대답 ' + TURNS + '번 완료, AI 마무리 재생 끝나면 종료');
+      setStatus('마무리 중');
+      if (!aiPlaying(s)) finishConversation('완료');
+      else s.timers.push(setTimeout(() => { if (!s.ended) finishConversation('완료'); }, 15000));
+    }
+  }
+}
+
+/* ===================== 방식 2: 번갈아 말하기 ===================== */
+function pickVoice() {
+  if (!window.speechSynthesis) return null;
+  const vs = speechSynthesis.getVoices().filter(v => /en[-_]US/i.test(v.lang));
+  return vs.find(v => /Samantha|Google US English|Aria|Jenny/i.test(v.name)) || vs.find(v => v.localService) || vs[0] || null;
+}
+function speak(s, text) {
+  return new Promise(resolve => {
+    if (!window.speechSynthesis) { log('speechSynthesis 없음, 읽기 생략', 'WARN'); resolve({ started: 0 }); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    const v = pickVoice();
+    if (v) u.voice = v;
+    let done = false, started = 0;
+    const finish = why => { if (done) return; done = true; clearTimeout(timer); if (why !== 'end') log('TTS 종료: ' + why, 'WARN'); resolve({ started }); };
+    const est = 2500 + text.split(/\s+/).length * 600;
+    const timer = setTimeout(() => finish('시간 초과(onend 안 옴)'), est + 4000);
+    u.onstart = () => { started = performance.now(); setStatus('말하는 중'); };
+    u.onend = () => finish('end');
+    u.onerror = e => finish('오류 ' + (e.error || ''));
+    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+    log('TTS 시작 요청: voice=' + (v ? v.name + '/' + v.lang : '기본') + ', "' + text.slice(0, 60) + '"');
+  });
+}
+
+async function startTurns(s) {
+  s.history = [];
+  const opener = OPENERS[Math.floor(Math.random() * OPENERS.length)];
+  addBubble('ai', opener);
+  s.history.push({ role: 'tutor', text: opener });
+  setBig('AI 말하는 중', 'wait', false);
+  await speak(s, opener);
+  if (s.ended) return;
+  readyToSpeak(s);
+}
+function readyToSpeak(s) {
+  setStatus('버튼을 누르고 말하세요');
+  setBig('말하기', '', true);
+}
+
+$('bigBtn').addEventListener('click', () => {
+  const s = S;
+  if (!s || s.ended || s.mode !== 'turns') return;
+  if (!s.recording) {
+    if (s.ctx && s.ctx.state !== 'running') s.ctx.resume().catch(() => {});
+    s.recording = true;
+    s.turnRec = []; s.turnRecLen = 0; s.peakRms = 0;
+    s.recStartAt = performance.now();
+    setStatus('듣는 중');
+    setBig('보내기', 'rec', true);
+    log('녹음 시작 (대답 ' + (s.userTurns + 1) + ')');
+  } else {
+    s.recording = false;
+    const dur = s.turnRecLen / TARGET_RATE;
+    log('녹음 끝: ' + dur.toFixed(1) + '초, 최대 RMS=' + s.peakRms.toFixed(3));
+    if (dur < 0.5) { setStatus('너무 짧아요. 다시 말해 주세요.'); setBig('말하기', '', true); return; }
+    if (s.peakRms < SPEECH_RMS) log('녹음 소리가 매우 작음 (마이크 확인)', 'WARN');
+    sendTurn(s);
+  }
+});
+
+async function sendTurn(s) {
+  const pcm = concatInt16(s.turnRec, s.turnRecLen);
+  const wav = encodeWav(pcm, TARGET_RATE);
+  const isLast = s.userTurns + 1 >= TURNS;
+  setStatus('생각 중');
+  setBig('생각 중', 'wait', false);
+  const historyText = s.history.map(h => (h.role === 'tutor' ? 'Tutor: ' : 'Learner: ') + h.text).join('\n');
+  const instr = [
+    'Conversation so far:',
+    historyText,
+    '',
+    'The attached audio is the learner\'s next answer.',
+    '1) "heard": write exactly what the learner said, word for word, in English letters. Do NOT fix grammar or pronunciation. If you cannot hear speech, write "".',
+    isLast
+      ? '2) "reply": this was the learner\'s final answer. React in a few words and say ONE short goodbye sentence. Do NOT ask a question.'
+      : '2) "reply": react briefly in a few words, then ask ONE short follow-up question (12 words or fewer). Do not correct mistakes.'
+  ].join('\n');
+  const body = {
+    model: TURN_MODEL,
+    system_instruction: TUTOR_PROMPT,
+    input: [
+      { type: 'text', text: instr },
+      { type: 'audio', data: bytesToBase64(wav), mime_type: 'audio/wav' }
+    ],
+    response_format: {
+      type: 'text',
+      mime_type: 'application/json',
+      schema: {
+        type: 'object',
+        properties: { heard: { type: 'string' }, reply: { type: 'string' } },
+        required: ['heard', 'reply']
+      }
+    },
+    generation_config: { thinking_level: 'minimal' },
+    store: false
+  };
+  const tSend = performance.now();
+  let res;
+  try {
+    res = await callInteractions(body, 30000);
+  } catch (e) {
+    log('턴 요청 실패: ' + e.message, 'ERR');
+    if (s.ended) return;
+    setStatus('오류가 났습니다. 다시 말해 주세요.');
+    setBig('말하기', '', true);
+    return;
+  }
+  if (s.ended) return;
+  const apiMs = Math.round(performance.now() - tSend);
+  const obj = res.json || {};
+  const heard = String(obj.heard || '').trim();
+  const reply = String(obj.reply || '').trim() || 'Sorry, can you say that again?';
+  log('턴 응답 ' + apiMs + 'ms: heard="' + heard.slice(0, 80) + '", reply="' + reply.slice(0, 80) + '"');
+
+  // 성공한 대답만 분석용 녹음에 합친다
+  const room = MAX_REC_SAMPLES - s.recLen;
+  if (room > 0) { const part = pcm.length > room ? pcm.subarray(0, room) : pcm; s.rec.push(part); s.recLen += part.length; }
+
+  addBubble('me', heard || '(알아듣지 못함)');
+  addBubble('ai', reply);
+  s.history.push({ role: 'learner', text: heard || '(unclear)' });
+  s.history.push({ role: 'tutor', text: reply });
+  s.userTurns++;
+  setTurnInfo();
+  setBig('AI 말하는 중', 'wait', false);
+  const sp = await speak(s, reply);
+  const ttsMs = sp.started ? Math.round(sp.started - tSend - apiMs) : null;
+  s.turnLatencies.push({ turn: s.userTurns, ms: sp.started ? Math.round(sp.started - tSend) : apiMs, api: apiMs, tts: ttsMs });
+  if (s.ended) return;
+  if (s.userTurns >= TURNS) finishConversation('완료');
+  else readyToSpeak(s);
+}
+
+/* ===================== Interactions API 호출 ===================== */
+// Api-Revision 헤더: 2026-11-24 로컬 크롬 실측에서 CORS 사전요청이 이 헤더를 막음(fetch TypeError).
+// 문서상 구 스키마는 2026-06-08 에 제거되어 헤더 없이도 새 스키마(steps)가 기본일 것으로 봄(미확인).
+// 그래서 기본은 헤더 없이 보낸다. null 로 바꾸면 헤더를 먼저 시도하고 실패 시 빼고 재시도한다.
+let revisionHeaderOk = false;
+
+async function callInteractions(body, timeoutMs) {
+  const key = getKey();
+  const payload = JSON.stringify(body);
+  log('Interactions 요청: model=' + body.model + ', 크기=' + (payload.length / 1024).toFixed(0) + 'KB');
+  const attempt = async withRevision => {
+    const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': key };
+    if (withRevision) headers['Api-Revision'] = API_REVISION;
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), timeoutMs);
+    try {
+      return await fetch(INTERACTIONS_URL, { method: 'POST', headers, body: payload, signal: ac.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+    } finally { clearTimeout(to); }
+  };
+  let resp;
+  const t = performance.now();
+  try {
+    resp = await attempt(revisionHeaderOk !== false);
+    if (revisionHeaderOk === null) revisionHeaderOk = true;
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('시간 초과 ' + timeoutMs + 'ms');
+    if (revisionHeaderOk === false) {
+      log('fetch 실패 (' + e.name + ': ' + e.message + '). CORS 또는 네트워크 문제 가능', 'ERR');
+      throw new Error('fetch 실패: ' + e.name + ': ' + e.message);
+    }
+    log('fetch 실패 (' + e.name + ': ' + e.message + '). CORS 또는 네트워크 문제 가능. Api-Revision 헤더 없이 재시도', 'WARN');
+    try {
+      resp = await attempt(false);
+      revisionHeaderOk = false;
+      log('Api-Revision 헤더 없이 성공 (헤더가 CORS에서 막혔을 가능성)', 'WARN');
+    } catch (e2) {
+      if (e2.name === 'AbortError') throw new Error('시간 초과 ' + timeoutMs + 'ms');
+      throw new Error('fetch 실패: ' + e2.name + ': ' + e2.message);
+    }
+  }
+  const raw = await resp.text();
+  const ms = Math.round(performance.now() - t);
+  if (!resp.ok) {
+    log('HTTP ' + resp.status + ' (' + ms + 'ms) 본문: ' + raw.slice(0, 300), 'ERR');
+    const err = new Error('HTTP ' + resp.status);
+    err.status = resp.status;
+    throw err;
+  }
+  let data;
+  try { data = JSON.parse(raw); } catch (e) { log('응답 JSON 파싱 실패: ' + raw.slice(0, 300), 'ERR'); throw new Error('응답 형식 오류'); }
+  if (data.status && data.status !== 'completed') log('interaction status=' + data.status, 'WARN');
+  const text = extractText(data);
+  if (!text) { log('응답에 텍스트 없음: ' + raw.slice(0, 300), 'ERR'); throw new Error('빈 응답'); }
+  let json = null;
+  try { json = JSON.parse(text); }
+  catch (e) {
+    const m = /\{[\s\S]*\}/.exec(text);
+    if (m) { try { json = JSON.parse(m[0]); } catch (e2) {} }
+  }
+  if (!json) { log('출력이 JSON 아님: ' + text.slice(0, 300), 'ERR'); throw new Error('JSON 아님'); }
+  if (data.usage) log('usage: ' + JSON.stringify(data.usage).slice(0, 300));
+  log('Interactions 성공 (' + ms + 'ms, model=' + (data.model || body.model) + ')');
+  return { json, data, ms };
+}
+
+function extractText(data) {
+  if (typeof data.output_text === 'string' && data.output_text) return data.output_text;
+  const out = [];
+  const steps = Array.isArray(data.steps) ? data.steps : (Array.isArray(data.outputs) ? data.outputs : []);
+  for (const st of steps) {
+    if (st.type && st.type !== 'model_output' && st.type !== 'text') continue;
+    if (typeof st.text === 'string') out.push(st.text);
+    const content = Array.isArray(st.content) ? st.content : [];
+    for (const c of content) if (c && c.type === 'text' && typeof c.text === 'string') out.push(c.text);
+  }
+  return out.join('');
+}
+
+/* ===================== 마무리와 분석 ===================== */
+$('endBtn').addEventListener('click', () => {
+  if (!S || S.ended) return;
+  log('사용자가 대화 끝내기 누름');
+  finishConversation('사용자 종료');
+});
+
+async function finishConversation(reason) {
+  const s = S;
+  if (!s || s.ended) return;
+  s.ended = true;
+  s.timers.forEach(clearTimeout);
+  const totalMs = Math.round(performance.now() - s.startedAt);
+  log('대화 종료: 이유=' + reason + ', 전체 ' + totalMs + 'ms, 통계=' + JSON.stringify(s.stats) + ', 녹음=' + (s.recLen / TARGET_RATE).toFixed(1) + '초, AI 재생 중 제외=' + (s.recSkipped / TARGET_RATE).toFixed(1) + '초');
+  try { if (s.ws && s.ws.readyState <= 1) s.ws.close(1000, 'done'); } catch (e) {}
+  await cleanupAudio(s);
+  try { if (s.wakeLock) s.wakeLock.release(); } catch (e) {}
+  $('endBtn').disabled = true;
+  setBig('분석 중', 'wait', false);
+
+  const transcript = transcriptFromChat();
+  const pcm = concatInt16(s.rec, s.recLen);
+  const meta = {
+    date: new Date().toISOString(),
+    mode: s.mode,
+    liveModel: s.mode === 'live' ? $('liveModel').value : null,
+    reason,
+    totalMs,
+    openerMs: s.openerLatency || null,
+    turnLatencies: s.turnLatencies,
+    userTurns: s.userTurns,
+    recSec: +(s.recLen / TARGET_RATE).toFixed(1)
+  };
+  if (pcm.length) {
+    try {
+      const url = URL.createObjectURL(new Blob([encodeWav(pcm, TARGET_RATE)], { type: 'audio/wav' }));
+      $('recAudio').src = url; show('recWrap', true);
+    } catch (e) {}
+  }
+  const userLines = transcript.filter(x => x.role === 'me');
+  if (pcm.length < TARGET_RATE || !userLines.length) {
+    log('분석 생략: 녹음 ' + (pcm.length / TARGET_RATE).toFixed(1) + '초, 내 말 ' + userLines.length + '줄', 'WARN');
+    S = null;
+    showResult({ meta, transcript, analysis: null, analysisMs: null, analysisModel: null, note: '분석할 내 목소리가 부족합니다.' });
+    return;
+  }
+  setStatus('분석 중');
+  const t = performance.now();
+  let analysis = null, analysisModel = null, note = '';
+  try {
+    const r = await analyze(pcm, transcript);
+    analysis = r.json; analysisModel = r.model;
+  } catch (e) {
+    log('분석 실패: ' + e.message, 'ERR');
+    note = '분석에 실패했습니다 (' + e.message + ').';
+  }
+  const analysisMs = Math.round(performance.now() - t);
+  S = null;
+  showResult({ meta, transcript, analysis, analysisMs, analysisModel, note });
+}
+
+async function analyze(pcm, transcript) {
+  const wav = encodeWav(pcm, TARGET_RATE);
+  log('분석용 WAV ' + (wav.length / 1024 / 1024).toFixed(2) + 'MB, ' + (pcm.length / TARGET_RATE).toFixed(1) + '초');
+  const convo = transcript.map(x => (x.role === 'ai' ? 'Tutor: ' : 'Learner (speech recognition, may be wrong): ') + x.text).join('\n');
+  const prompt = [
+    'You are an English speaking coach for a Korean learner at CEFR A2 level.',
+    'The attached audio contains the learner\'s voice from a short conversation. Silence or a faint tutor voice may also be present; judge only the learner.',
+    'The transcript below came from automatic speech recognition and may contain recognition errors. When the transcript and the audio disagree, trust the audio.',
+    '',
+    'Transcript:',
+    convo,
+    '',
+    'Return JSON with:',
+    '- "grammar": at most 4 items, using the learner\'s real sentences. "said" = what the learner said, "corrected" = a natural corrected sentence, "reason_ko" = one short reason in Korean. Return an empty list if there are no errors.',
+    '- "pronunciation": at most 5 items. Report ONLY words you clearly heard mispronounced in THIS audio. Do NOT flag words that sounded fine. Do NOT guess based on mistakes Korean learners commonly make. If you are not sure, leave it out. An empty list is fine. "word" = the English word, "heard_as_ko" = how it actually sounded (in Korean, you may quote the sound), "fix_ko" = how to fix it with mouth or tongue tips (in Korean).',
+    '- "good_point_ko": one sentence in Korean about something specific the learner did well.',
+    'Korean writing rules: short sentences, polite style, no emoji, no em dash, no middle dot.'
+  ].join('\n');
+  const schema = {
+    type: 'object',
+    properties: {
+      grammar: { type: 'array', items: { type: 'object', properties: { said: { type: 'string' }, corrected: { type: 'string' }, reason_ko: { type: 'string' } }, required: ['said', 'corrected', 'reason_ko'] } },
+      pronunciation: { type: 'array', items: { type: 'object', properties: { word: { type: 'string' }, heard_as_ko: { type: 'string' }, fix_ko: { type: 'string' } }, required: ['word', 'heard_as_ko', 'fix_ko'] } },
+      good_point_ko: { type: 'string' }
+    },
+    required: ['grammar', 'pronunciation', 'good_point_ko']
+  };
+  const mk = (model, level) => ({
+    model,
+    input: [
+      { type: 'text', text: prompt },
+      { type: 'audio', data: bytesToBase64(wav), mime_type: 'audio/wav' }
+    ],
+    response_format: { type: 'text', mime_type: 'application/json', schema },
+    generation_config: { thinking_level: level },
+    store: false
+  });
+  try {
+    const r = await callInteractions(mk(ANALYSIS_MODEL, 'low'), 120000);
+    return { json: r.json, model: ANALYSIS_MODEL };
+  } catch (e) {
+    if (e.status === 429) {
+      log(ANALYSIS_MODEL + ' 429 (하루 한도 가능성). ' + ANALYSIS_FALLBACK_MODEL + ' 로 한 번 재시도', 'WARN');
+      const r = await callInteractions(mk(ANALYSIS_FALLBACK_MODEL, 'minimal'), 120000);
+      return { json: r.json, model: ANALYSIS_FALLBACK_MODEL };
+    }
+    throw e;
+  }
+}
+
+/* ===================== 결과 화면 ===================== */
+let lastResult = null;
+function showResult(result, fromStorage) {
+  lastResult = result;
+  show('talkCard', false);
+  show('keyCard', true);
+  show('modeCard', true);
+  refreshKeyUI();
+  show('resultCard', true);
+  $('resultTitle').textContent = fromStorage ? '지난 결과' : '결과';
+  if (!fromStorage) {
+    try { localStorage.setItem(LS_RESULT, JSON.stringify(result)); } catch (e) { log('결과 저장 실패: ' + e.message, 'WARN'); }
+  }
+  const a = result.analysis;
+  const m = result.meta || {};
+  let h = '';
+  if (result.note) h += '<p class="err">' + esc(result.note) + '</p>';
+  if (a) {
+    const g = (Array.isArray(a.grammar) ? a.grammar : []).slice(0, 4);
+    const p = (Array.isArray(a.pronunciation) ? a.pronunciation : []).slice(0, 5);
+    h += '<h3>문법</h3>';
+    h += g.length ? g.map(x => '<div class="item"><div class="said">' + esc(x.said) + '</div><div class="fixed">' + esc(x.corrected) + '</div><div class="why">' + esc(x.reason_ko) + '</div></div>').join('') : '<p class="empty">고칠 문법이 없습니다.</p>';
+    h += '<h3>발음</h3>';
+    h += p.length ? p.map(x => '<div class="item"><div class="fixed">' + esc(x.word) + '</div><div class="why">들린 소리: ' + esc(x.heard_as_ko) + '</div><div>' + esc(x.fix_ko) + '</div></div>').join('') : '<p class="empty">확실히 틀린 발음은 없었습니다.</p>';
+    h += '<h3>잘한 점</h3><p>' + esc(a.good_point_ko || '') + '</p>';
+  }
+  h += '<h3>걸린 시간</h3><div class="timing">' + timingLines(result).map(esc).join('<br>') + '</div>';
+  h += '<h3>대화 내용</h3><div class="timing">' + (result.transcript || []).map(x => esc((x.role === 'ai' ? 'AI: ' : '나: ') + x.text)).join('<br>') + '</div>';
+  $('resultBody').innerHTML = h;
+  $('resultCard').scrollIntoView({ block: 'start' });
+  log('결과 표시 (분석 모델=' + (result.analysisModel || '없음') + ', 분석 ' + (result.analysisMs || 0) + 'ms)');
+}
+
+function timingLines(r) {
+  const m = r.meta || {};
+  const lines = [];
+  lines.push('방식: ' + (m.mode === 'live' ? '실시간 대화 (' + m.liveModel + ')' : '번갈아 말하기'));
+  lines.push('대화 전체: ' + (m.totalMs != null ? sec(m.totalMs) : '-'));
+  if (m.openerMs) lines.push('첫 인사까지: ' + sec(m.openerMs));
+  (m.turnLatencies || []).forEach(t => {
+    let s = t.turn + '번째 대답 후 응답 대기: ' + sec(t.ms);
+    if (t.api != null) s += ' (서버 ' + sec(t.api) + (t.tts != null ? ', 읽기 시작 ' + sec(t.tts) : '') + ')';
+    lines.push(s);
+  });
+  lines.push('분석: ' + (r.analysisMs != null ? sec(r.analysisMs) : '-') + (r.analysisModel ? ' (' + r.analysisModel + ')' : ''));
+  lines.push('분석에 보낸 녹음: ' + (m.recSec != null ? m.recSec + '초' : '-'));
+  return lines;
+}
+
+function resultAsText(r) {
+  const a = r.analysis;
+  const out = ['[영어 말하기 결과] ' + (r.meta && r.meta.date ? r.meta.date.slice(0, 16).replace('T', ' ') : '')];
+  if (r.note) out.push(r.note);
+  if (a) {
+    out.push('', '문법');
+    const g = (a.grammar || []).slice(0, 4);
+    if (!g.length) out.push('- 고칠 문법이 없습니다.');
+    g.forEach((x, i) => out.push((i + 1) + '. ' + x.said + ' -> ' + x.corrected + ' (' + x.reason_ko + ')'));
+    out.push('', '발음');
+    const p = (a.pronunciation || []).slice(0, 5);
+    if (!p.length) out.push('- 확실히 틀린 발음은 없었습니다.');
+    p.forEach((x, i) => out.push((i + 1) + '. ' + x.word + ': 들린 소리 ' + x.heard_as_ko + ' / 고치는 법 ' + x.fix_ko));
+    out.push('', '잘한 점', a.good_point_ko || '');
+  }
+  out.push('', '걸린 시간');
+  timingLines(r).forEach(l => out.push('- ' + l));
+  out.push('', '대화 내용');
+  (r.transcript || []).forEach(x => out.push((x.role === 'ai' ? 'AI: ' : '나: ') + x.text));
+  return out.join('\n');
+}
+
+
+$('copyResultBtn').addEventListener('click', async () => {
+  if (!lastResult) return;
+  const ok = await copyText(resultAsText(lastResult));
+  flash($('copyResultBtn'), ok ? '복사했습니다' : '복사 실패');
+});
+$('newBtn').addEventListener('click', () => {
+  show('resultCard', false);
+  $('startErr').classList.add('hidden');
+  window.scrollTo(0, 0);
+});
+
+/* ===================== 진단 패널 ===================== */
+$('diag').addEventListener('toggle', () => { if ($('diag').open) renderLog(); });
+$('copyLogBtn').addEventListener('click', async () => {
+  const text = ['[진단 로그] ' + APP_VERSION, '', '환경:', ...Object.keys(env).map(k => k + ': ' + env[k]), '', '로그:', ...logLines].join('\n');
+  const ok = await copyText(redact(text));
+  flash($('copyLogBtn'), ok ? '복사했습니다' : '복사 실패');
+});
+$('clearLogBtn').addEventListener('click', () => { logLines.length = 0; renderLog(); });
+
+/* ===================== 화면 숨김 처리 ===================== */
+document.addEventListener('visibilitychange', () => {
+  log('visibilitychange: ' + document.visibilityState);
+  if (document.visibilityState === 'hidden' && S && !S.ended && S.stream) {
+    log('화면이 숨겨져 대화를 정리합니다', 'WARN');
+    finishConversation('화면 숨김');
+  }
+});
+window.addEventListener('pagehide', () => { if (S && !S.ended) { log('pagehide'); finishConversation('페이지 닫힘'); } });
+
+/* ===================== 초기화 ===================== */
+checkEnv();
+refreshKeyUI();
+try {
+  const saved = localStorage.getItem(LS_RESULT);
+  if (saved) showResult(JSON.parse(saved), true);
+} catch (e) { log('지난 결과 읽기 실패: ' + e.message, 'WARN'); }
+log('준비 완료');
+</script>
+</body>
+</html>
