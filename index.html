@@ -233,7 +233,7 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.1.1 (2026-11-24)';
+const APP_VERSION = '0.1.2 (2026-11-24)';
 const TURNS = 3;                         // 학습자가 답하는 횟수
 const API_BASE = 'https://generativelanguage.googleapis.com';
 const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
@@ -261,6 +261,8 @@ const TUTOR_PROMPT = [
   'Speak slowly and clearly, with simple words.',
   'Ask only ONE short question at a time (12 words or fewer).',
   'Do NOT correct the learner\'s mistakes during the conversation.',
+  'Keep every reply under 20 words. You are only a conversation partner: never give advice, warnings, or disclaimers.',
+  'If you could not understand the learner, say so in a few words and ask them to say it again.',
   'First react briefly to what the learner said (a few words), then ask one follow-up question.',
   'Topics: everyday life such as their day today, family, work, weekend.',
   'Start by greeting the learner in one short sentence and asking your first question.',
@@ -276,6 +278,10 @@ const OPENERS = [
 
 /* ===================== 로그 ===================== */
 const logLines = [];
+try {
+  const prevLog = JSON.parse(localStorage.getItem('ec_log') || '[]');
+  if (Array.isArray(prevLog) && prevLog.length) { logLines.push(...prevLog.slice(-200)); logLines.push('---- 여기까지 이전 화면의 기록 ----'); }
+} catch (e) {}
 const t0 = performance.now();
 function pad(n, w) { return String(n).padStart(w || 2, '0'); }
 function stamp() {
@@ -293,6 +299,7 @@ function log(msg, level) {
   logLines.push(line);
   if (logLines.length > 800) logLines.splice(0, logLines.length - 800);
   if (level === 'ERR') console.error(line); else console.log(line);
+  try { localStorage.setItem('ec_log', JSON.stringify(logLines.slice(-250))); } catch (e) {}
   if ($('diag').open) renderLog();
 }
 function renderLog() {
@@ -1218,6 +1225,7 @@ async function finishConversation(reason) {
   }
   setStatus('분석 중');
   lastAnalysisInput = { pcm, transcript, meta };
+  idbSet('lastInput', lastAnalysisInput);
   const t = performance.now();
   let analysis = null, analysisModel = null, note = '';
   try {
@@ -1266,18 +1274,52 @@ async function analyze(pcm, transcript) {
       { type: 'audio', data: bytesToBase64(wav), mime_type: 'audio/wav' }
     ],
     response_format: { type: 'text', mime_type: 'application/json', schema },
-    generation_config: { thinking_level: level },
+    ...(level ? { generation_config: { thinking_level: level } } : {}),
     store: false
   });
-  try {
-    const r = await callInteractions(mk(ANALYSIS_MODEL, 'low'), 45000);
-    return { json: r.json, model: ANALYSIS_MODEL };
-  } catch (e) {
-    if (e.status === 400 || e.status === 401 || e.status === 403) throw e;
-    log(ANALYSIS_MODEL + ' 실패 (' + (e.status || e.message) + '). ' + ANALYSIS_FALLBACK_MODEL + ' 로 한 번 재시도', 'WARN');
-    const r = await callInteractions(mk(ANALYSIS_FALLBACK_MODEL, 'minimal'), 60000);
-    return { json: r.json, model: ANALYSIS_FALLBACK_MODEL };
+  const chain = [
+    [ANALYSIS_MODEL, 'low', 45000],
+    ['gemini-3.8-flash', null, 45000],
+    [ANALYSIS_FALLBACK_MODEL, 'minimal', 60000],
+    ['gemini-3.1-flash-lite', null, 60000]
+  ];
+  let lastErr = null;
+  for (const [model, level, ms] of chain) {
+    try {
+      const r = await callInteractions(mk(model, level), ms);
+      return { json: r.json, model };
+    } catch (e) {
+      lastErr = e;
+      if (e.status === 401 || e.status === 403) throw e;
+      log('분석 모델 ' + model + ' 실패 (' + (e.status || e.message) + '). 다음 모델로 넘어감', 'WARN');
+    }
   }
+  throw lastErr;
+}
+
+/* ===================== 다시 분석용 녹음 보관 (이 기기 안에만) ===================== */
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('ec_store', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbSet(k, v) {
+  try {
+    const db = await idbOpen();
+    await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    db.close();
+  } catch (e) { log('녹음 보관 실패: ' + (e && e.message), 'WARN'); }
+}
+async function idbGet(k) {
+  try {
+    const db = await idbOpen();
+    const v = await new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+    db.close();
+    return v || null;
+  } catch (e) { return null; }
 }
 
 /* ===================== 결과 화면 ===================== */
@@ -1314,7 +1356,7 @@ function showResult(result, fromStorage) {
   const m = result.meta || {};
   let h = '';
   if (result.note) h += '<p class="err">' + esc(result.note) + '</p>';
-  if (!a && !fromStorage && lastAnalysisInput) h += '<p><button id="reAnalyzeBtn" type="button">다시 분석</button></p>';
+  if (!a && lastAnalysisInput) h += '<p><button id="reAnalyzeBtn" type="button">다시 분석</button></p>';
   if (a) {
     const g = (Array.isArray(a.grammar) ? a.grammar : []).slice(0, 4);
     const p = (Array.isArray(a.pronunciation) ? a.pronunciation : []).slice(0, 5);
@@ -1405,11 +1447,20 @@ window.addEventListener('pagehide', () => { if (S && !S.ended) { log('pagehide')
 /* ===================== 초기화 ===================== */
 checkEnv();
 refreshKeyUI();
-try {
-  const saved = localStorage.getItem(LS_RESULT);
-  if (saved) showResult(JSON.parse(saved), true);
-} catch (e) { log('지난 결과 읽기 실패: ' + e.message, 'WARN'); }
-log('준비 완료');
+(async () => {
+  try {
+    const saved = localStorage.getItem(LS_RESULT);
+    if (saved) {
+      const res = JSON.parse(saved);
+      if (!res.analysis) {
+        const inp = await idbGet('lastInput');
+        if (inp && inp.meta && res.meta && inp.meta.date === res.meta.date) lastAnalysisInput = inp;
+      }
+      showResult(res, true);
+    }
+  } catch (e) { log('지난 결과 읽기 실패: ' + e.message, 'WARN'); }
+  log('준비 완료');
+})();
 </script>
 </body>
 </html>
