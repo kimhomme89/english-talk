@@ -241,7 +241,7 @@
 'use strict';
 
 /* ===================== 설정 상수 ===================== */
-const APP_VERSION = '0.1.4 (2026-11-24)';
+const APP_VERSION = '0.1.5 (2026-11-24)';
 let TURNS = 3;                           // 학습자가 답하는 횟수 (화면에서 고름)
 const API_BASE = 'https://generativelanguage.googleapis.com';
 const INTERACTIONS_URL = API_BASE + '/v1beta/interactions';
@@ -832,8 +832,8 @@ function startLive(s) {
             silenceDurationMs: VAD_SILENCE_MS
           }
         },
-        inputAudioTranscription: {},
-        outputAudioTranscription: {}
+        inputAudioTranscription: langHintOk() ? { languageCodes: ['en-US'] } : {},
+        outputAudioTranscription: langHintOk() ? { languageCodes: ['en-US'] } : {}
       }
     };
     ws.send(JSON.stringify(setup));
@@ -859,7 +859,12 @@ function startLive(s) {
   ws.onclose = ev => {
     log('WebSocket close: code=' + ev.code + ', reason="' + String(ev.reason || '').slice(0, 300) + '", wasClean=' + ev.wasClean, ev.code === 1000 ? '' : 'WARN');
     if (S === s && !s.ended) {
-      if (!s.setupDone) abortSession('연결이 끊겼습니다 (코드 ' + ev.code + '). 진단 정보를 확인하세요.');
+      if (!s.setupDone && langHintOk() && ev.code !== 1000 && /languageCodes|language|Unknown name|Invalid JSON|invalid argument/i.test(String(ev.reason || ''))) {
+        try { localStorage.setItem('ec_lang_hint_bad', '1'); } catch (e) {}
+        log('영어 고정 설정이 거절됨. 다음부터 설정 없이 연결', 'WARN');
+        abortSession('연결 설정을 바꿨습니다. 대화 시작을 한 번 더 눌러 주세요.');
+      }
+      else if (!s.setupDone) abortSession('연결이 끊겼습니다 (코드 ' + ev.code + '). 진단 정보를 확인하세요.');
       else finishConversation('연결 끊김');
     }
   };
@@ -1472,6 +1477,8 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 window.addEventListener('pagehide', () => { if (S && !S.ended) { log('pagehide'); finishConversation('페이지 닫힘'); } });
+
+function langHintOk() { try { return localStorage.getItem('ec_lang_hint_bad') !== '1'; } catch (e) { return true; } }
 
 /* ===================== 대화 길이 ===================== */
 (() => {
